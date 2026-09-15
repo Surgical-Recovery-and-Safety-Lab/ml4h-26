@@ -1,0 +1,40 @@
+2026-09-14 17:13:59,039 | medpipe.orchestrator | INFO | orchestrator:172 | Initialised MedpipeOrchestrator. Run directory: artifacts/ngboost/v1
+2026-09-14 17:13:59,315 | medpipe.orchestrator | INFO | orchestrator:257 | Reproducibility artifacts saved successfully.
+2026-09-14 17:13:59,316 | medpipe | INFO | pipeline:738 | MedpipeRegressor initialisation complete.
+2026-09-14 17:13:59,316 | medpipe | INFO | pipeline:1026 | Executing full MedpipeRegressor pipeline end-to-end.
+2026-09-14 17:13:59,316 | medpipe | DEBUG | pipeline:1030 | Executing full MedpipeRegressor pipeline in fast mode.
+2026-09-14 17:13:59,316 | medpipe | INFO | pipeline:1038 | Step 1/3: Ingesting and splitting dataset.
+2026-09-14 17:13:59,316 | medpipe.orchestrator | INFO | orchestrator:459 | Ingesting data from /pvol/mroe734/data/NZ_data.v2.parquet
+2026-09-14 17:14:01,940 | medpipe.orchestrator | DEBUG | orchestrator:467 | Loaded data shape: (2585589, 95)
+2026-09-14 17:14:02,347 | medpipe.orchestrator | INFO | orchestrator:506 | Filtered dataset from 95 down to 14 required columns.
+2026-09-14 17:14:02,348 | medpipe.orchestrator | DEBUG | orchestrator:510 | Filtered data shape: (2585589, 14)
+2026-09-14 17:14:02,797 | medpipe.orchestrator | INFO | orchestrator:356 | Data successfully split into Train (2,238,312), and Test (347,277) sets.
+2026-09-14 17:14:02,797 | medpipe.orchestrator | DEBUG | orchestrator:360 | Train set initial shape: (2238312, 13)
+2026-09-14 17:14:02,797 | medpipe.orchestrator | DEBUG | orchestrator:361 | Test set initial shape: (347277, 13)
+2026-09-14 17:14:02,900 | medpipe.orchestrator | INFO | orchestrator:376 | Data successfully prepared with CV groups.
+2026-09-14 17:14:02,900 | medpipe.orchestrator | DEBUG | orchestrator:377 | Train set shape after CV groups removed: (2238312, 12)
+2026-09-14 17:14:02,999 | medpipe.orchestrator | INFO | orchestrator:389 | Removed ['OP_YEAR', 'DHB_NAME'] from data.
+2026-09-14 17:14:02,999 | medpipe.orchestrator | DEBUG | orchestrator:392 | Train set final shape: (2238312, 11)
+2026-09-14 17:14:02,999 | medpipe.orchestrator | DEBUG | orchestrator:393 | Test set final shape: (347277, 11)
+2026-09-14 17:14:03,051 | medpipe | INFO | pipeline:1044 | Step 2/3: Fitting outcome models.
+2026-09-14 17:14:03,051 | medpipe | INFO | pipeline:854 | Starting model fitting across configured target outcomes.
+2026-09-14 17:14:03,052 | medpipe.runner | DEBUG | runner:531 | Starting fitting of 1 models.
+2026-09-14 17:14:03,052 | medpipe.runner | INFO | runner:436 | --- Starting execution for outcome: DAOH_90 ---
+2026-09-14 17:14:03,052 | medpipe.orchestrator | INFO | orchestrator:665 | Constructing preprocessing pipeline.
+2026-09-14 17:14:03,052 | medpipe.orchestrator | DEBUG | orchestrator:681 | Creating operation 1: name='OrdinalEncoder' columns=['SEX', 'ETHNICITY', 'ADMISSION_ACUITY', 'ADMISSION_SOURCE', 'CATEGORY_LEVEL_1', 'CATEGORY_LEVEL_2'] on columns ['SEX', 'ETHNICITY', 'ADMISSION_ACUITY', 'ADMISSION_SOURCE', 'CATEGORY_LEVEL_1', 'CATEGORY_LEVEL_2']
+2026-09-14 17:14:03,052 | medpipe.runner | INFO | runner:103 | Estimator NGBRegressor successfully instantiated
+2026-09-14 17:14:03,052 | medpipe.runner | DEBUG | runner:106 | Estimator instantiated with parameters {'learning_rate': 0.1, 'early_stopping_rounds': 10, 'n_estimators': 100}
+2026-09-14 17:14:03,052 | medpipe.runner | DEBUG | runner:483 | [DAOH_90] Fitting without any CV
+2026-09-14 17:22:29,220 | medpipe.runner | INFO | runner:159 | [DAOH_90] Model saved to artifacts/ngboost/v1/models/DAOH_90_model.joblib
+2026-09-14 17:22:29,220 | medpipe.runner | INFO | runner:497 | --- Finished execution for outcome: DAOH_90 ---
+2026-09-14 17:22:29,221 | medpipe.runner | DEBUG | runner:555 | [DAOH_90] Fitting completed in 506.17 seconds.
+2026-09-14 17:22:29,266 | medpipe.runner | INFO | runner:173 | Fitted final models saved to artifacts/ngboost/v1/models/DAOH_fitted.joblib
+2026-09-14 17:22:29,266 | medpipe | INFO | pipeline:862 | Completed model fitting for all target outcomes.
+2026-09-14 17:22:29,266 | medpipe | DEBUG | pipeline:1054 | Model fitting completed in 506.21 seconds.
+2026-09-14 17:22:29,266 | medpipe | INFO | pipeline:1057 | Step 3/3: Evaluating models on holdout test set.
+2026-09-14 17:22:29,267 | medpipe.evaluator | INFO | evaluator:397 | --- Starting model evaluation for outcome: DAOH_90 ---
+2026-09-14 17:22:35,594 | medpipe.evaluator | INFO | evaluator:408 | [DAOH_90] Computing overall metrics with 50 bootstrap iterations (CI=0.95).
+2026-09-14 17:22:36,146 | medpipe.evaluator | INFO | evaluator:505 | [DAOH_90] Successfully saved evaluation artifacts to artifacts/ngboost/v1/results/DAOH_90_evaluation_results.json.
+2026-09-14 17:22:36,146 | medpipe.evaluator | INFO | evaluator:472 | --- Finished model evaluation for outcome: DAOH_90 ---
+2026-09-14 17:22:36,146 | medpipe | DEBUG | pipeline:1078 | Full pipeline run completed in 516.83 seconds.
+2026-09-14 17:22:36,146 | medpipe | INFO | pipeline:1081 | Full MedpipeRegressor pipeline execution finished successfully.

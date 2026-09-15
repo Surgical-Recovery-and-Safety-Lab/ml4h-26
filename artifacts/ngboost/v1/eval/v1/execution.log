@@ -1,0 +1,14 @@
+2026-09-15 13:25:18,736 | medpipe.orchestrator | INFO | orchestrator:172 | Initialised MedpipeOrchestrator. Run directory: artifacts/ngboost/v1/eval/v1
+2026-09-15 13:25:18,900 | medpipe.orchestrator | INFO | orchestrator:257 | Reproducibility artifacts saved successfully.
+2026-09-15 13:25:18,900 | medpipe | INFO | pipeline:739 | MedpipeRegressor initialisation complete.
+2026-09-15 13:25:18,937 | medpipe | INFO | pipeline:1233 | Succesfully loaded MedpipeRegressor from artifacts/ngboost/v1
+2026-09-15 13:25:18,937 | medpipe.orchestrator | INFO | orchestrator:459 | Ingesting data from /pvol/mroe734/data/NZ_data.v2.parquet
+2026-09-15 13:25:20,691 | medpipe.orchestrator | DEBUG | orchestrator:467 | Loaded data shape: (2585589, 95)
+2026-09-15 13:25:20,988 | medpipe.orchestrator | INFO | orchestrator:506 | Filtered dataset from 95 down to 13 required columns.
+2026-09-15 13:25:20,988 | medpipe.orchestrator | DEBUG | orchestrator:510 | Filtered data shape: (2585589, 13)
+2026-09-15 13:25:21,373 | medpipe.orchestrator | INFO | orchestrator:356 | Data successfully split into Train (2,238,312), and Test (347,277) sets.
+2026-09-15 13:25:21,373 | medpipe.orchestrator | DEBUG | orchestrator:360 | Train set initial shape: (2238312, 12)
+2026-09-15 13:25:21,373 | medpipe.orchestrator | DEBUG | orchestrator:361 | Test set initial shape: (347277, 12)
+2026-09-15 13:25:21,461 | medpipe.orchestrator | INFO | orchestrator:389 | Removed ['OP_YEAR'] from data.
+2026-09-15 13:25:21,461 | medpipe.orchestrator | DEBUG | orchestrator:392 | Train set final shape: (2238312, 11)
+2026-09-15 13:25:21,461 | medpipe.orchestrator | DEBUG | orchestrator:393 | Test set final shape: (347277, 11)

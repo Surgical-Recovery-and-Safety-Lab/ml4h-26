@@ -1,0 +1,10 @@
+\begin{tabular}{ccc}
+\toprule
+\textbf{Metrics} & \textbf{NGBoost} & \textbf{OrdBoost} \\
+\midrule
+MAE (days) & 4.65 & 3.70 \\
+MAESS & 0.016 & 0.216 \\
+CRPS (days) & 3.59 & 2.77 \\
+CRPSS & 0.100 & 0.305 \\
+\bottomrule
+\end{tabular}
