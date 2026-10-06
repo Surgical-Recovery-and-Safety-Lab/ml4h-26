@@ -65,6 +65,27 @@ if __name__ == "__main__":
         default="v1",
     )
 
+    # Experiment parser
+    exp_parser = subparsers.add_parser(
+        "experiment",
+        help="run an experiment",
+        description="Run one of the available experiments",
+    )
+    exp_parser.add_argument(
+        "experiment", choices=["binning", "mappers"], help="experiment to run"
+    )
+    exp_group = exp_parser.add_mutually_exclusive_group(required=True)
+    exp_group.add_argument(
+        "--run",
+        action="store_true",
+        help="fit all the models from the selected experiment",
+    )
+    exp_group.add_argument(
+        "--results",
+        action="store_true",
+        help="generate all the results for the selected experiment",
+    )
+
     args = parser.parse_args()
     if hasattr(args, "model"):
         # The run subcommand was called
