@@ -36,20 +36,19 @@ if __name__ == "__main__":
     )
 
     subparsers = parser.add_subparsers(prog="main")
+
+    # Main model fitting parser
     run_parser = subparsers.add_parser(
-        "run",
-        help="fit a model",
-        description="Run ordboost or ngboost model",
+        "run", help="fit a model", description="Run ordboost or ngboost model"
     )
 
     run_parser.add_argument(
-        "model",
-        help="model to select",
-        choices=["ordboost", "ngboost"],
+        "model", help="model to select", choices=["ordboost", "ngboost"]
     )
 
+    # Main results generation parser
     gen_parser = subparsers.add_parser(
-        "res-gen", help="generate results", description="Generate one or more figures"
+        "results", help="generate results", description="Generate one or more figures"
     )
     gen_parser.add_argument(
         "ordboost_version",
