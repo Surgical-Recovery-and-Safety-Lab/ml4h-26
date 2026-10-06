@@ -87,11 +87,10 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    if hasattr(args, "model"):
+
+    if args.command == "run":
         # The run subcommand was called
-        run_model(
-            model=args.model,
-        )
-    else:
-        # The res-gen command was called
+        run_model(model=args.model)
+    elif args.command == "results":
+        # The results command was called
         generate_results(args.ordboost_version, args.ngboost_version)
