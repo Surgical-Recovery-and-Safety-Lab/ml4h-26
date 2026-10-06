@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
-
-from medpipe import MedpipeRegressor
+from pathlib import Path
+from typing import Literal
 
 from res_gen import generate_results
 
+from medpipe import MedpipeRegressor
 
-def run_model(
-    model: str,
-):
+
+def run_model(model: str) -> None:
     """Fit an NGBoost or OrdBoost model.
 
     Parameters
@@ -28,6 +28,34 @@ def run_model(
     plot_path.mkdir(exist_ok=True)
     res_path = pipe.run_dir / "results"
     res_path.mkdir(exist_ok=True)
+
+
+def run_experiment(
+    experiment: Literal["binning"], run_flag: Literal["run", "results"]
+) -> None:
+    """Run the selected experiment.
+
+    Parameters
+    ----------
+    experiment : str, {"binning"}
+        Selected experiment to run.
+    run_flag : str, {"run", "results"}
+        Flag to select how to run the experiment. The `run` mode fits all the
+        models in the experiment. The `results` mode generates the results, if
+        the models have been fitted first.
+
+    """
+    src_dir = Path(f"experiments/{experiment}")
+    pattern = "*.toml"  # Get only .toml files
+
+    config_files = sorted(p for p in src_dir.glob(pattern) if p.is_file())
+
+    for config_file in config_files:
+        if run_flag == "run":
+            pipe = MedpipeRegressor(
+                config=config_file, base_artifact_dir=src_dir / "artifacts"
+            )
+            pipe.run()
 
 
 if __name__ == "__main__":
@@ -94,3 +122,11 @@ if __name__ == "__main__":
     elif args.command == "results":
         # The results command was called
         generate_results(args.ordboost_version, args.ngboost_version)
+
+    else:
+        # The experiment command was called
+        if args.run:
+            run_flag = "run"
+        else:
+            run_flat = "results"
+        run_experiment(experiment=args.experiment, run_flag=run_flag)
