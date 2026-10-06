@@ -10,6 +10,14 @@ from res_gen import generate_results
 def run_model(
     model: str,
 ):
+    """Fit an NGBoost or OrdBoost model.
+
+    Parameters
+    ----------
+    model : str, {"ordboost", "ngboost"}
+        Name of the model to run.
+
+    """
     config = f"DAOH_config_{model}.toml"
     dir = f"artifacts/{model}"
 
