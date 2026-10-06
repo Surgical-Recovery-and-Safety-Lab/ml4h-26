@@ -32,14 +32,14 @@ def run_model(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        prog="main", description="Train models and generate figures for ml4h paper"
+        prog="main", description="Fit pipelines and generate figures for ml4h paper"
     )
 
     subparsers = parser.add_subparsers(prog="main")
     run_parser = subparsers.add_parser(
         "run",
-        help="run a model",
-        description="Run model ordboost or ngboost model",
+        help="fit a model",
+        description="Run ordboost or ngboost model",
     )
 
     run_parser.add_argument(
