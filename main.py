@@ -16,11 +16,12 @@ def run_model(model: str) -> None:
         Name of the model to run.
 
     """
-    config = f"DAOH_config_{model}.toml"
+    config = f"config/DAOH_config_{model}.toml"
     dir = f"artifacts/{model}"
 
     pipe = MedpipeRegressor(config=config, base_artifact_dir=dir)
     pipe.run()
+
     # Make directories to save results in case they don't exist
     plot_path = pipe.run_dir / "plots"
     plot_path.mkdir(exist_ok=True)
@@ -44,11 +45,18 @@ def run_experiment(
 
     """
     src_dir = Path(f"experiments/{experiment}")
+    config_dir = src_dir / "config"  # Configuration file directory
     pattern = "*.toml"  # Get only .toml files
 
-    config_files = sorted(p for p in src_dir.glob(pattern) if p.is_file())
+    config_files = sorted(p for p in config_dir.glob(pattern) if p.is_file())
 
     if run_flag == "results":
+        # Make directories to save results in case they don't exist
+        plot_path = src_dir / "plots"
+        plot_path.mkdir(exist_ok=True)
+        res_path = src_dir / "results"
+        res_path.mkdir(exist_ok=True)
+
         generate_experiment_results(experiment)
 
     for config_file in config_files:
