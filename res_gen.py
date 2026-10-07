@@ -29,7 +29,7 @@ from plotting import (
 
 THEME = themes.MedpipeTheme()
 BINNING_EXP_ORDER = ["3-bins", "5-bins", "uniform", "quantile", "ordboost"]
-MAPPERS_EXP_ORDER = ["mean", "median", "uniform", "quantile", "continuous"]
+MAPPERS_EXP_ORDER = ["mean", "median", "uniform", "continuous", "ordboost"]
 
 
 def generate_results(
