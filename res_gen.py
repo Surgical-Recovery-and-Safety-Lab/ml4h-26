@@ -29,6 +29,7 @@ from plotting import (
 
 THEME = themes.MedpipeTheme()
 BINNING_EXP_ORDER = ["3-bins", "5-bins", "uniform", "quantile", "ordboost"]
+MAPPERS_EXP_ORDER = ["mean", "median", "uniform", "quantile", "continuous"]
 
 
 def generate_results(
@@ -236,11 +237,16 @@ def generate_experiment_results(experiment: Literal["binning", "mappers"]) -> No
         "quantile": "Quantile",
         "uniform": "Uniform",
         "ordboost": "OrdBoost",
+        "mean": "Mean",
+        "median": "Median",
+        "continuous": "Continuous",
     }
 
     results = {}
     if experiment == "binning":
         order = BINNING_EXP_ORDER
+    else:
+        order = MAPPERS_EXP_ORDER
 
     for model, dist in models.items():
         results[model] = compute_metrics(
