@@ -151,7 +151,7 @@ def generate_results(
 
     results = {}
     for model, dist in models.items():
-        results[model] = marginal_calibration(y_test, dist, grid_y)
+        results[model] = marginal_calibration(y_test, dist, grid_y, mapper=mapper)
 
     plot_marginal_calibration(
         results,
