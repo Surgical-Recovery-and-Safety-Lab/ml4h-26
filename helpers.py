@@ -7,17 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import xarray as xr
-from helpers_ngboost import (
-    NGBoostDistAdapter,
-    cdf_grid_ngboost,
-    crps_ngboost,
-    marginal_calibration_curve_ngboost,
-    pit_diagnostics_ngboost,
-)
 from numpy.typing import ArrayLike
-from scores.probability import Pit, PitFcstAtObs
-from sklearn.metrics import mean_absolute_error
-
 from ordboost.distributions import ContinuousPredictiveDistribution
 from ordboost.mappers import BaseBinMapper
 from ordboost.metrics import (
@@ -29,6 +19,16 @@ from ordboost.metrics import (
     pit_diagnostics,
     sharpness,
     winkler_score,
+)
+from scores.probability import Pit, PitFcstAtObs
+from sklearn.metrics import mean_absolute_error
+
+from helpers_ngboost import (
+    NGBoostDistAdapter,
+    cdf_grid_ngboost,
+    crps_ngboost,
+    marginal_calibration_curve_ngboost,
+    pit_diagnostics_ngboost,
 )
 
 
@@ -117,7 +117,7 @@ def pit_histogram(
     return {"alpha": alpha, "hist_values": hist_values}
 
 
-def marginal_calibration(y_true, dist, grid_y):
+def marginal_calibration(y_true, dist, grid_y, mapper):
     """Marginal calibration for a model.
 
     Returns dict[label -> (grid_y, diff)]
@@ -126,7 +126,7 @@ def marginal_calibration(y_true, dist, grid_y):
     if isinstance(dist, NGBoostDistAdapter):
         results = marginal_calibration_curve_ngboost(y_true_arr, dist, grid_y)
     else:
-        results = marginal_calibration_curve(y_true_arr, dist)
+        results = marginal_calibration_curve(y_true_arr, dist, mapper)
     return results
 
 
