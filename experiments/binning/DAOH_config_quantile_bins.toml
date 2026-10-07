@@ -1,5 +1,5 @@
 [meta]
-project_name = "DAOH"
+project_name = "quantile"
 run_mode = "fast"
 verbose = 1
 
