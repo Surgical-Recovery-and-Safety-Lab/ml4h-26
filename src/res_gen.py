@@ -7,7 +7,7 @@ from medpipe.visualisation import themes
 from ordboost.mappers import BaseBinMapper
 from ordboost.metrics import pit_diagnostics
 
-from helpers import (
+from src.helpers import (
     compute_metrics,
     compute_sample_cdfs,
     coverage_sharpness_curve,
@@ -18,7 +18,7 @@ from helpers import (
     save_table,
     wrap_ngboost_pred_dist,
 )
-from plotting import (
+from src.plotting import (
     plot_binned_vs_continuous,
     plot_coverage,
     plot_marginal_calibration,
