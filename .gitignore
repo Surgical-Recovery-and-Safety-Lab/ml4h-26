@@ -1,2 +1,8 @@
 __pycache__
 experiments/binning/artifacts/
+experiments/binning/plots/
+experiments/binning/results/
+
+experiments/mappers/artifacts/
+experiments/mappers/plots/
+experiments/mappers/results/
