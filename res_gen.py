@@ -25,6 +25,7 @@ from plotting import (
     plot_pit_histogram_grouped,
     plot_sample_cdfs,
     plot_sharpness,
+    plot_winkler,
 )
 
 THEME = themes.MedpipeTheme()
@@ -263,10 +264,9 @@ def generate_experiment_results(experiment: Literal["binning", "mappers"]) -> No
         save_path=src_dir / "results/table.txt",
     )
 
-    """
     results = {}
     for model, dist in models.items():
-        mapper = ordboost_pipe.models["DAOH_90"]["regressor"].mapper_
+        mapper = mappers[model]
         results[model] = pit_histogram(y_test, dist, mapper)
 
     plot_pit_histogram_grouped(
@@ -275,7 +275,7 @@ def generate_experiment_results(experiment: Literal["binning", "mappers"]) -> No
         display_labels=display_labels,
         save_path=src_dir / "plots/pit_histogram.png",
     )
-    """
+
     results = {}
     for model, dist in models.items():
         grid_y = dist.grid_y
@@ -289,12 +289,20 @@ def generate_experiment_results(experiment: Literal["binning", "mappers"]) -> No
         save_path=src_dir / "plots/marginal_calibration.png",
     )
 
-    coverage_levels = np.arange(10, 95, 5)  # 10, 15, ..., 90
+    coverage_levels = np.arange(10, 96, 5)  # 10, 15, ..., 90
 
     results = {}
     for model, dist in models.items():
-        results[model] = coverage_sharpness_curve(y_test, dist, coverage_levels)
+        results[model] = coverage_sharpness_curve(
+            y_test, dist, coverage_levels, tolerance=1e-4
+        )
 
+    plot_winkler(
+        results,
+        THEME.palette,
+        display_labels=display_labels,
+        save_path=src_dir / "plots/winkler.png",
+    )
     plot_coverage(
         results,
         THEME.palette,
