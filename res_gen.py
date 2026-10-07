@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 from medpipe import MedpipeRegressor
@@ -27,6 +28,7 @@ from plotting import (
 )
 
 THEME = themes.MedpipeTheme()
+BINNING_EXP_ORDER = ["3-bins", "5-bins", "uniform", "quantile", "ordboost"]
 
 
 def generate_results(
@@ -176,6 +178,129 @@ def generate_results(
         THEME.palette,
         display_labels=display_labels,
         save_path=ordboost_pipe.run_dir / "plots/sharpness.png",
+    )
+
+
+def generate_experiment_results(experiment: Literal["binning"]) -> None:
+    """Experiment result generating function.
+
+    The results are saved in the experiments/{experiment} plots and
+    results folders.
+
+    Parameters
+    ----------
+    experiment : str, {"binning"}
+        Experiment to generate results for.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the artifacts directory or the subfolders are not found.
+
+    """
+    # Check that the artifacts folder exists and has 5 subfolders
+    src_dir = Path(f"experiments/{experiment}")
+    artifacts_dir = src_dir / "artifacts"
+
+    if not artifacts_dir.is_dir():
+        msg = f"Missing directory: {artifacts_dir}"
+        raise FileNotFoundError(msg)
+
+    expected = {f"v{i}" for i in range(1, 6)}
+    found = {p.name for p in artifacts_dir.iterdir() if p.is_dir()}
+    if missing := expected - found:
+        msg = f"{artifacts_dir} is missing subfolders: {sorted(missing)}. "
+        "Run the experiment command with the --run flag first."
+        raise FileNotFoundError(msg)
+
+    pipes = [MedpipeRegressor.load(artifacts_dir / f"v{i}") for i in range(1, 6)]
+
+    # Extract the data
+    pipes[0]._orchestrator.prepare_data()
+    X_test = pipes[0].data_split.X_test
+    y_test = pipes[0].data_split.y_test.to_numpy().squeeze()
+    y_train = pipes[0].data_split.y_train.to_numpy().squeeze()
+
+    models = {}
+    mappers = {}
+    for i, pipe in enumerate(pipes):
+        name = pipe.mp_config.meta.project_name
+        dist = pipe.models["DAOH_90"].predict_dist(X_test)
+
+        models[name] = dist
+        mappers[name] = pipe.models["DAOH_90"]["regressor"].mapper_
+
+    display_labels = {
+        "3-bins": "3-bins",
+        "5-bins": "5-bins",
+        "quantile": "Quantile",
+        "uniform": "Uniform",
+        "ordboost": "OrdBoost",
+    }
+
+    results = {}
+    if experiment == "binning":
+        order = BINNING_EXP_ORDER
+
+    for model, dist in models.items():
+        results[model] = compute_metrics(
+            y_test,
+            np.round(dist.median()),
+            dist,
+            y_train,
+        )
+
+    generate_result_table(
+        results,
+        order=order,
+        display_labels=display_labels,
+        save_path=src_dir / "results/table.txt",
+    )
+
+    """
+    results = {}
+    for model, dist in models.items():
+        mapper = ordboost_pipe.models["DAOH_90"]["regressor"].mapper_
+        results[model] = pit_histogram(y_test, dist, mapper)
+
+    plot_pit_histogram_grouped(
+        results,
+        colors=THEME.palette,
+        display_labels=display_labels,
+        save_path=src_dir / "plots/pit_histogram.png",
+    )
+    """
+    results = {}
+    for model, dist in models.items():
+        grid_y = dist.grid_y
+        mapper = mappers[model]
+        results[model] = marginal_calibration(y_test, dist, grid_y, mapper=mapper)
+
+    plot_marginal_calibration(
+        results,
+        colors=THEME.palette,
+        display_labels=display_labels,
+        save_path=src_dir / "plots/marginal_calibration.png",
+    )
+
+    coverage_levels = np.arange(10, 95, 5)  # 10, 15, ..., 90
+
+    results = {}
+    for model, dist in models.items():
+        results[model] = coverage_sharpness_curve(y_test, dist, coverage_levels)
+
+    plot_coverage(
+        results,
+        THEME.palette,
+        display_labels=display_labels,
+        save_path=src_dir / "plots/coverage.png",
+    )
+
+    plot_sharpness(
+        results,
+        THEME.palette,
+        display_labels=display_labels,
+        save_path=src_dir / "plots/sharpness.png",
     )
 
 
