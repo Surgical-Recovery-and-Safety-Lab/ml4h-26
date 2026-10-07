@@ -27,7 +27,7 @@ outcomes = ["DAOH_90"]
 algorithm = "HistGradientBoostingRegressor"
 
 [default_model.hyperparameters]
-loss = "squared_error"
+loss = "absolute_error"
 learning_rate = 0.1
 max_iter = 100
 max_leaf_nodes = 512
