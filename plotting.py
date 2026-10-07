@@ -366,3 +366,46 @@ def plot_sharpness(model_results, colors, display_labels=None, save_path=None):
     if save_path is not None:
         fig.savefig(save_path, dpi=300, bbox_inches="tight")
     return fig, ax
+
+
+def plot_winkler(model_results, colors, display_labels=None, save_path=None):
+    """Figure 4: sharpness across nominal coverage levels, one line per
+    model.
+    """
+    display_labels = display_labels or {}
+    style = {
+        "ngboost": dict(color=COLOURS["ngboost"], marker="o"),
+        "ordboost": dict(color=COLOURS["ordboost"], marker="s"),
+        "uniform": dict(color=COLOURS["uniform"], marker="s"),
+        "quantile": dict(color=COLOURS["quantile"], marker="s"),
+        "continuous": dict(color=COLOURS["continuous"], marker="s"),
+        "mean": dict(color=COLOURS["mean"], marker="s"),
+        "median": dict(color=COLOURS["median"], marker="s"),
+        "3-bins": dict(color=COLOURS["3-bins"], marker="s"),
+        "5-bins": dict(color=COLOURS["5-bins"], marker="s"),
+    }
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+
+    for model, results in model_results.items():
+        ax.plot(
+            results["coverage_levels"],
+            results["winkler"],
+            label=display_labels.get(model, model),
+            **style.get(model, {}),
+            linewidth=2,
+        )
+
+    ax.set_xlim(0, 100)
+    ax.set_xlabel("Nominal coverage (%)", fontweight="bold")
+    ax.set_ylabel("Winkler score", fontweight="bold")
+    ax.set_title("Winkler score", fontweight="bold")
+    ax.legend(frameon=False)
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    fig.tight_layout()
+    if save_path is not None:
+        fig.savefig(save_path, dpi=300, bbox_inches="tight")
+    return fig, ax
