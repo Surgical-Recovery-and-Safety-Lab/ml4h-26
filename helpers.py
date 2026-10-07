@@ -147,6 +147,7 @@ def coverage_sharpness_curve(y_true, dist, coverage_levels, tolerance=0.0):
 
     empirical_coverage = np.empty_like(alphas)
     sharp = np.empty_like(alphas)
+    wink = np.empty_like(alphas)
 
     for i, alpha in enumerate(alphas):
         empirical_coverage[i] = interval_coverage_rate(
@@ -156,10 +157,12 @@ def coverage_sharpness_curve(y_true, dist, coverage_levels, tolerance=0.0):
             tolerance=tolerance,
         )
         sharp[i] = sharpness(dist, alpha=alpha)
+        wink[i] = winkler_score(y_true_arr, dist, alpha)
 
     return {
         "coverage_levels": coverage_levels,
         "empirical_coverage": empirical_coverage,
+        "winkler": wink,
         "sharpness": sharp,
     }
 
