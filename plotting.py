@@ -180,6 +180,13 @@ def plot_pit_histogram_grouped(
     style = {
         "ngboost": COLOURS["ngboost"],
         "ordboost": COLOURS["ordboost"],
+        "uniform": COLOURS["uniform"],
+        "quantile": COLOURS["quantile"],
+        "continuous": COLOURS["continuous"],
+        "median": COLOURS["median"],
+        "mean": COLOURS["mean"],
+        "3-bins": COLOURS["3-bins"],
+        "5-bins": COLOURS["5-bins"],
     }
 
     if ax is None:
