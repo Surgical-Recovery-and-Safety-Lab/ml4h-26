@@ -31,13 +31,13 @@ def run_model(model: str) -> None:
 
 
 def run_experiment(
-    experiment: Literal["binning"], run_flag: Literal["run", "results"]
+    experiment: Literal["binning", "mappers"], run_flag: Literal["run", "results"]
 ) -> None:
     """Run the selected experiment.
 
     Parameters
     ----------
-    experiment : str, {"binning"}
+    experiment : str, {"binning", "mappers"}
         Selected experiment to run.
     run_flag : str, {"run", "results"}
         Flag to select how to run the experiment. The `run` mode fits all the

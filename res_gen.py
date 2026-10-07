@@ -181,7 +181,7 @@ def generate_results(
     )
 
 
-def generate_experiment_results(experiment: Literal["binning"]) -> None:
+def generate_experiment_results(experiment: Literal["binning", "mappers"]) -> None:
     """Experiment result generating function.
 
     The results are saved in the experiments/{experiment} plots and
@@ -189,7 +189,7 @@ def generate_experiment_results(experiment: Literal["binning"]) -> None:
 
     Parameters
     ----------
-    experiment : str, {"binning"}
+    experiment : str, {"binning", "mappers"}
         Experiment to generate results for.
 
     Raises
