@@ -4,6 +4,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from medpipe.visualisation.themes import MedpipeTheme
 
 plt.rcParams.update(
     {
@@ -15,6 +16,15 @@ plt.rcParams.update(
         "legend.fontsize": 13,
     }
 )
+THEME = MedpipeTheme()
+COLOURS = {
+    "ngboost": THEME.palette[0],
+    "ordboost": THEME.palette[1],
+    "3-bins": THEME.palette[0],
+    "5-bins": THEME.palette[2],
+    "uniform": THEME.palette[3],
+    "quantile": THEME.palette[4],
+}
 
 
 def plot_binned_vs_continuous(
@@ -165,8 +175,8 @@ def plot_pit_histogram_grouped(
     n_groups = len(models)
 
     style = {
-        "ngboost": colors[0],
-        "ordboost": colors[1],
+        "ngboost": COLOURS["ngboost"],
+        "ordboost": COLOURS["ordboost"],
     }
 
     if ax is None:
@@ -231,8 +241,12 @@ def plot_marginal_calibration(
         _, ax = plt.subplots(figsize=(7, 5))
 
     style = {
-        "ngboost": dict(color=colors[0]),
-        "ordboost": dict(color=colors[1]),
+        "ngboost": dict(color=COLOURS["ngboost"]),
+        "ordboost": dict(color=COLOURS["ordboost"]),
+        "uniform": dict(color=COLOURS["uniform"]),
+        "quantile": dict(color=COLOURS["quantile"]),
+        "3-bins": dict(color=COLOURS["3-bins"]),
+        "5-bins": dict(color=COLOURS["5-bins"]),
     }
 
     for label, results in model_results.items():
@@ -264,8 +278,12 @@ def plot_coverage(model_results, colors, display_labels=None, save_path=None):
     """
     display_labels = display_labels or {}
     style = {
-        "ngboost": dict(color=colors[0], marker="o"),
-        "ordboost": dict(color=colors[1], marker="s"),
+        "ngboost": dict(color=COLOURS["ngboost"], marker="o"),
+        "ordboost": dict(color=COLOURS["ordboost"], marker="s"),
+        "uniform": dict(color=COLOURS["uniform"], marker="s"),
+        "quantile": dict(color=COLOURS["quantile"], marker="s"),
+        "3-bins": dict(color=COLOURS["3-bins"], marker="s"),
+        "5-bins": dict(color=COLOURS["5-bins"], marker="s"),
     }
 
     fig, ax = plt.subplots(figsize=(7, 5), sharex=True)
@@ -304,8 +322,12 @@ def plot_sharpness(model_results, colors, display_labels=None, save_path=None):
     """
     display_labels = display_labels or {}
     style = {
-        "ngboost": dict(color=colors[0], marker="o"),
-        "ordboost": dict(color=colors[1], marker="s"),
+        "ngboost": dict(color=COLOURS["ngboost"], marker="o"),
+        "ordboost": dict(color=COLOURS["ordboost"], marker="s"),
+        "uniform": dict(color=COLOURS["uniform"], marker="s"),
+        "quantile": dict(color=COLOURS["quantile"], marker="s"),
+        "3-bins": dict(color=COLOURS["3-bins"], marker="s"),
+        "5-bins": dict(color=COLOURS["5-bins"], marker="s"),
     }
 
     fig, ax = plt.subplots(figsize=(7, 5))
