@@ -19,11 +19,14 @@ plt.rcParams.update(
 THEME = MedpipeTheme()
 COLOURS = {
     "ngboost": THEME.palette[0],
-    "ordboost": THEME.palette[1],
     "3-bins": THEME.palette[0],
+    "mean": THEME.palette[0],
+    "ordboost": THEME.palette[1],
+    "median": THEME.palette[2],
     "5-bins": THEME.palette[2],
     "uniform": THEME.palette[3],
     "quantile": THEME.palette[4],
+    "continuous": THEME.palette[4],
 }
 
 
