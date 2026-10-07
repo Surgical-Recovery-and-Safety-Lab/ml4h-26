@@ -4,9 +4,9 @@ import argparse
 from pathlib import Path
 from typing import Literal
 
-from res_gen import generate_results
-
 from medpipe import MedpipeRegressor
+
+from res_gen import generate_experiment_results, generate_results
 
 
 def run_model(model: str) -> None:
@@ -50,8 +50,12 @@ def run_experiment(
 
     config_files = sorted(p for p in src_dir.glob(pattern) if p.is_file())
 
+    if run_flag == "results":
+        generate_experiment_results(experiment)
+
     for config_file in config_files:
         if run_flag == "run":
+            print(f"Configuration file: {config_file}")
             pipe = MedpipeRegressor(
                 config=config_file, base_artifact_dir=src_dir / "artifacts"
             )
@@ -63,7 +67,7 @@ if __name__ == "__main__":
         prog="main", description="Fit pipelines and generate figures for ml4h paper"
     )
 
-    subparsers = parser.add_subparsers(prog="main")
+    subparsers = parser.add_subparsers(prog="main", dest="command")
 
     # Main model fitting parser
     run_parser = subparsers.add_parser(
@@ -128,5 +132,5 @@ if __name__ == "__main__":
         if args.run:
             run_flag = "run"
         else:
-            run_flat = "results"
+            run_flag = "results"
         run_experiment(experiment=args.experiment, run_flag=run_flag)
