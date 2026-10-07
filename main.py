@@ -7,12 +7,12 @@ from medpipe import MedpipeRegressor
 from src.res_gen import generate_experiment_results, generate_results
 
 
-def run_model(model: str) -> None:
-    """Fit an NGBoost or OrdBoost model.
+def run_model(model: Literal["ordboost", "ngboost", "regressor"]) -> None:
+    """Fit one of the available models.
 
     Parameters
     ----------
-    model : str, {"ordboost", "ngboost"}
+    model : str, {"ordboost", "ngboost", "regressor"}
         Name of the model to run.
 
     """
@@ -77,11 +77,11 @@ if __name__ == "__main__":
 
     # Main model fitting parser
     run_parser = subparsers.add_parser(
-        "run", help="fit a model", description="Run ordboost or ngboost model"
+        "run", help="fit a model", description="Run one of the available models"
     )
 
     run_parser.add_argument(
-        "model", help="model to select", choices=["ordboost", "ngboost"]
+        "model", help="model to select", choices=["ordboost", "ngboost", "regressor"]
     )
 
     # Main results generation parser
