@@ -130,7 +130,7 @@ def marginal_calibration(y_true, dist, grid_y, mapper):
     return results
 
 
-def coverage_sharpness_curve(y_true, dist, coverage_levels):
+def coverage_sharpness_curve(y_true, dist, coverage_levels, tolerance=0.0):
     """For each nominal central-interval coverage level (in percent, e.g.
     90 for a 90% interval), compute empirical coverage, sharpness (mean
     interval width).
@@ -153,6 +153,7 @@ def coverage_sharpness_curve(y_true, dist, coverage_levels):
             y_true_arr,
             dist,
             alpha=alpha,
+            tolerance=tolerance,
         )
         sharp[i] = sharpness(dist, alpha=alpha)
 
