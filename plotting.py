@@ -248,6 +248,9 @@ def plot_marginal_calibration(
         "ordboost": dict(color=COLOURS["ordboost"]),
         "uniform": dict(color=COLOURS["uniform"]),
         "quantile": dict(color=COLOURS["quantile"]),
+        "continuous": dict(color=COLOURS["continuous"]),
+        "median": dict(color=COLOURS["median"]),
+        "mean": dict(color=COLOURS["mean"]),
         "3-bins": dict(color=COLOURS["3-bins"]),
         "5-bins": dict(color=COLOURS["5-bins"]),
     }
@@ -285,6 +288,9 @@ def plot_coverage(model_results, colors, display_labels=None, save_path=None):
         "ordboost": dict(color=COLOURS["ordboost"], marker="s"),
         "uniform": dict(color=COLOURS["uniform"], marker="s"),
         "quantile": dict(color=COLOURS["quantile"], marker="s"),
+        "continuous": dict(color=COLOURS["continuous"], marker="s"),
+        "mean": dict(color=COLOURS["mean"], marker="s"),
+        "median": dict(color=COLOURS["median"], marker="s"),
         "3-bins": dict(color=COLOURS["3-bins"], marker="s"),
         "5-bins": dict(color=COLOURS["5-bins"], marker="s"),
     }
@@ -329,6 +335,9 @@ def plot_sharpness(model_results, colors, display_labels=None, save_path=None):
         "ordboost": dict(color=COLOURS["ordboost"], marker="s"),
         "uniform": dict(color=COLOURS["uniform"], marker="s"),
         "quantile": dict(color=COLOURS["quantile"], marker="s"),
+        "continuous": dict(color=COLOURS["continuous"], marker="s"),
+        "mean": dict(color=COLOURS["mean"], marker="s"),
+        "median": dict(color=COLOURS["median"], marker="s"),
         "3-bins": dict(color=COLOURS["3-bins"], marker="s"),
         "5-bins": dict(color=COLOURS["5-bins"], marker="s"),
     }
