@@ -4,7 +4,7 @@ from typing import Literal
 
 from medpipe import MedpipeRegressor
 
-from res_gen import generate_experiment_results, generate_results
+from src.res_gen import generate_experiment_results, generate_results
 
 
 def run_model(model: str) -> None:
