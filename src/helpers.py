@@ -8,6 +8,17 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from numpy.typing import ArrayLike
+from scores.probability import Pit, PitFcstAtObs
+from sklearn.metrics import mean_absolute_error
+from src.helpers_ngboost import (
+    NGBoostDistAdapter,
+    cdf_grid_ngboost,
+    crps_ngboost,
+    marginal_calibration_curve_ngboost,
+    pit_diagnostics_ngboost,
+)
+
+from medpipe import MedpipeRegressor
 from ordboost.distributions import ContinuousPredictiveDistribution
 from ordboost.mappers import BaseBinMapper
 from ordboost.metrics import (
@@ -20,16 +31,6 @@ from ordboost.metrics import (
     sharpness,
     winkler_score,
 )
-from scores.probability import Pit, PitFcstAtObs
-from sklearn.metrics import mean_absolute_error
-
-from src.helpers_ngboost import (
-    NGBoostDistAdapter,
-    cdf_grid_ngboost,
-    crps_ngboost,
-    marginal_calibration_curve_ngboost,
-    pit_diagnostics_ngboost,
-)
 
 
 def wrap_ngboost_pred_dist(ngb_pred_dist) -> NGBoostDistAdapter:
@@ -38,20 +39,28 @@ def wrap_ngboost_pred_dist(ngb_pred_dist) -> NGBoostDistAdapter:
 
 
 def compute_metrics(y_true, y_pred, dist, y_train):
-    """MAE, CRPS, CRPSS for one already-filtered region."""
-    if isinstance(dist, NGBoostDistAdapter):
-        crps_val = float(crps_ngboost(y_true, dist))
-    else:
-        crps_val = float(crps_score(y_true, dist))
-    dist_baseline = baseline_distribution(y_train, len(y_true))
-    baseline_cprs = float(crps_score(y_true, dist_baseline))
+    """MAE, CRPS, CRPSS for predictions from one model."""
     mae = mean_absolute_error(y_true, y_pred)
     medians = np.quantile(y_true, 0.5) * np.ones((len(y_true),))
+    maess = 1 - (mae / mean_absolute_error(y_true, medians))
+
+    if dist is not None:
+        if isinstance(dist, NGBoostDistAdapter):
+            crps_val = float(crps_ngboost(y_true, dist))
+        else:
+            crps_val = float(crps_score(y_true, dist))
+        dist_baseline = baseline_distribution(y_train, len(y_true))
+        baseline_cprs = float(crps_score(y_true, dist_baseline))
+        crpss_val = 1 - (crps_val / baseline_cprs)
+    else:
+        crps_val = mae
+        crpss_val = maess
+
     return {
         "mae": mae,
-        "maess": 1 - (mae / mean_absolute_error(y_true, medians)),
+        "maess": maess,
         "crps": crps_val,
-        "crpss": 1 - (crps_val / baseline_cprs),
+        "crpss": crpss_val,
     }
 
 
