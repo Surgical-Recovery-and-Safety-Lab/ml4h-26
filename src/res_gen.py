@@ -463,7 +463,7 @@ def generate_data_table(pipe: MedpipeRegressor) -> None:
 
     category_orders = {
         "TRAUMA": X_test["TRAUMA"].unique(),
-        "PRIOR_CANCER": X_test["TRAUMA"].unique(),
+        "PRIOR_CANCER": X_test["PRIOR_CANCER"].unique(),
         "SEX": X_test["SEX"].unique(),
         "ETHNICITY": X_test["ETHNICITY"].unique(),
     }
