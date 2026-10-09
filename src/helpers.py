@@ -5,23 +5,29 @@ package, region filtering, and LaTeX table generation.
 from pathlib import Path
 
 import numpy as np
+import xarray as xr
 from numpy.typing import ArrayLike
 from ordboost.distributions import ContinuousPredictiveDistribution
 from ordboost.mappers import BaseBinMapper
 from ordboost.metrics import (
     baseline_distribution,
-    crps_score,
     marginal_calibration_curve,
     pit_diagnostics,
     sharpness,
     winkler_score,
 )
-from sklearn.metrics import mean_absolute_error
+from scores.probability import crps_cdf
 
+from src.bootstrap import (
+    BOOTSTRAP_SEED,
+    N_BOOT,
+    bootstrap_statistic,
+    percentile_interval,
+)
 from src.helpers_ngboost import (
     NGBoostDistAdapter,
     cdf_grid_ngboost,
-    crps_ngboost,
+    crps_ngboost_samples,
     marginal_calibration_curve_ngboost,
     pit_diagnostics_ngboost,
 )
@@ -45,13 +51,53 @@ def wrap_ngboost_pred_dist(ngb_pred_dist) -> NGBoostDistAdapter:
     return NGBoostDistAdapter(ngb_pred_dist.dist)
 
 
-def compute_metrics(y_true, y_pred, dist, y_train):
-    """Compute the MAE, MAESS, CRPS and CRPSS for one model.
+def sample_crps(y_true, dist) -> np.ndarray:
+    """Compute the per-sample CRPS of a predictive distribution.
+
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        True target values.
+    dist : NGBoostDistAdapter or ContinuousPredictiveDistribution
+        Predicted distributions.
+
+    Returns
+    -------
+    np.ndarray of shape (n_samples,)
+        CRPS of each sample.
+
+    """
+    y_true_arr = np.asarray(y_true, dtype=float)
+
+    if isinstance(dist, NGBoostDistAdapter):
+        return crps_ngboost_samples(y_true_arr, dist)
+
+    fcst = xr.DataArray(
+        dist.grid_cdf,
+        dims=["sample", "threshold"],
+        coords={"threshold": dist.grid_y},
+    )
+    obs = xr.DataArray(y_true_arr, dims=["sample"])
+    result = crps_cdf(fcst, obs, threshold_dim="threshold", preserve_dims=["sample"])
+    return result.total.values
+
+
+def compute_metrics(
+    y_true,
+    y_pred,
+    dist,
+    y_train,
+    n_boot: int = N_BOOT,
+    seed: int = BOOTSTRAP_SEED,
+):
+    """Compute the MAE, MAESS, CRPS and CRPSS for one model, with 95% CIs.
 
     The skill scores are computed relative to a baseline: the median of
     `y_true` for the MAE, and the baseline distribution built from `y_train`
     for the CRPS. If the model has no predictive distribution, the CRPS and
-    CRPSS fall back to the MAE and MAESS.
+    CRPSS fall back to the MAE and MAESS. The per-sample errors are computed
+    once, and the confidence intervals are percentile intervals over
+    bootstrap resamples of the test samples.
 
     Parameters
     ----------
@@ -63,34 +109,46 @@ def compute_metrics(y_true, y_pred, dist, y_train):
         Predictive distributions. If None, only point metrics are used.
     y_train : array-like of shape (n_train_samples,)
         Training targets used to build the baseline distribution.
+    n_boot : int, default=1000
+        Number of bootstrap iterations.
+    seed : int, default=42
+        Seed of the bootstrap random generator. The same seed gives the same
+        resamples for every model.
 
     Returns
     -------
-    dict[str, float]
-        Dictionary with keys "mae", "maess", "crps" and "crpss".
+    dict[str, tuple[float, float, float]]
+        Dictionary with keys "mae", "maess", "crps" and "crpss". Each value
+        is a tuple (estimate, lower, upper) with the estimate computed on
+        the full sample.
 
     """
-    mae = mean_absolute_error(y_true, y_pred)
-    medians = np.quantile(y_true, 0.5) * np.ones((len(y_true),))
-    maess = 1 - (mae / mean_absolute_error(y_true, medians))
+    y_true_arr = np.asarray(y_true, dtype=float).ravel()
+    abs_err = np.abs(y_true_arr - np.asarray(y_pred, dtype=float).ravel())
 
     if dist is not None:
-        if isinstance(dist, NGBoostDistAdapter):
-            crps_val = float(crps_ngboost(y_true, dist))
-        else:
-            crps_val = float(crps_score(y_true, dist))
-        dist_baseline = baseline_distribution(y_train, len(y_true))
-        baseline_cprs = float(crps_score(y_true, dist_baseline))
-        crpss_val = 1 - (crps_val / baseline_cprs)
-    else:
-        crps_val = mae
-        crpss_val = maess
+        crps_i = sample_crps(y_true_arr, dist)
+        baseline = baseline_distribution(y_train, len(y_true_arr))
+        baseline_crps_i = sample_crps(y_true_arr, baseline)
 
+    def statistic(idx):
+        y = y_true_arr[idx]
+        mae = abs_err[idx].mean()
+        maess = 1 - mae / np.abs(y - np.quantile(y, 0.5)).mean()
+        if dist is None:
+            return np.array([mae, maess, mae, maess])
+        crps = crps_i[idx].mean()
+        crpss = 1 - crps / baseline_crps_i[idx].mean()
+        return np.array([mae, maess, crps, crpss])
+
+    estimates = statistic(np.arange(len(y_true_arr)))
+    draws = bootstrap_statistic(statistic, len(y_true_arr), n_boot, seed)
+    lower, upper = percentile_interval(draws)
+
+    names = ["mae", "maess", "crps", "crpss"]
     return {
-        "mae": mae,
-        "maess": maess,
-        "crps": crps_val,
-        "crpss": crpss_val,
+        name: (float(estimates[i]), float(lower[i]), float(upper[i]))
+        for i, name in enumerate(names)
     }
 
 

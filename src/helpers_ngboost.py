@@ -134,8 +134,8 @@ class NGBoostDistAdapter:
         return NGBoostDistAdapter(self._dist.dist(*new_args, **new_kwds))
 
 
-def crps_ngboost(y_true, dist: NGBoostDistAdapter) -> float:
-    """Compute the mean CRPS of an NGBoostDistAdapter.
+def crps_ngboost_samples(y_true, dist: NGBoostDistAdapter) -> np.ndarray:
+    """Compute the per-sample CRPS of an NGBoostDistAdapter.
 
     The CRPS is closed-form for a Normal distribution (fast), otherwise it
     uses per-sample numerical quadrature via properscoring (slower, consider
@@ -150,15 +150,15 @@ def crps_ngboost(y_true, dist: NGBoostDistAdapter) -> float:
 
     Returns
     -------
-    float
-        CRPS averaged over the samples.
+    np.ndarray of shape (n_samples,)
+        CRPS of each sample.
 
     """
     y_true_arr = np.asarray(y_true, dtype=float)
     frozen = dist._dist
     if getattr(frozen.dist, "name", "") == "norm":
-        return float(
-            np.mean(ps.crps_gaussian(y_true_arr, mu=frozen.mean(), sig=frozen.std()))
+        return np.asarray(
+            ps.crps_gaussian(y_true_arr, mu=frozen.mean(), sig=frozen.std())
         )
 
     scores = np.empty(len(y_true_arr))
@@ -167,7 +167,26 @@ def crps_ngboost(y_true, dist: NGBoostDistAdapter) -> float:
         scores[i] = ps.crps_quadrature(
             y, row._dist.cdf, xmin=row.ppf(1e-6)[0], xmax=row.ppf(1 - 1e-6)[0]
         )
-    return float(np.mean(scores))
+    return scores
+
+
+def crps_ngboost(y_true, dist: NGBoostDistAdapter) -> float:
+    """Compute the mean CRPS of an NGBoostDistAdapter.
+
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        True target values.
+    dist : NGBoostDistAdapter
+        Predicted distributions.
+
+    Returns
+    -------
+    float
+        CRPS averaged over the samples.
+
+    """
+    return float(np.mean(crps_ngboost_samples(y_true, dist)))
 
 
 def marginal_calibration_curve_ngboost(y_true, dist, grid_y):
