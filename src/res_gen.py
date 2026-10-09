@@ -385,8 +385,11 @@ def generate_prediction_table(results, interval, order, display_labels, save_pat
 
     # Header row 2: units + median/PI subheader
     header_row_2 = [r"days"]
-    for _ in order:
-        header_row_2.append(rf"median [{interval:.0f}\% PI]")
+    for model in order:
+        if model == "hgbr" or model == "mord":
+            header_row_2.append(rf"point-estimate")
+        else:
+            header_row_2.append(rf"median [{interval:.0f}\% PI]")
     lines.append(" & ".join(header_row_2) + r" \\")
 
     lines.append(r"\midrule")
@@ -398,7 +401,10 @@ def generate_prediction_table(results, interval, order, display_labels, save_pat
             daoh, pred, lower, upper = results[key][idx]
             if row_daoh is None:
                 row_daoh = daoh
-            row_cells.append(f"{pred:.0f} [{lower:.0f}--{upper:.0f}]")
+            if lower is not None:  # Only need to check one here
+                row_cells.append(f"{pred:.0f} [{lower:.0f}--{upper:.0f}]")
+            else:
+                row_cells.append(f"{pred:.0f}")
 
         lines.append(f"{row_daoh:.0f} & " + " & ".join(row_cells) + r" \\")
 
