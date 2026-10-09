@@ -1,6 +1,5 @@
 """Plot functions for conference paper figures."""
 
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -326,18 +325,18 @@ def plot_marginal_calibration(
         _, ax = plt.subplots(figsize=(7, 5))
 
     style = {
-        "ngboost": dict(color=COLOURS["ngboost"]),
-        "ordboost": dict(color=COLOURS["ordboost"]),
-        "uniform": dict(color=COLOURS["uniform"]),
-        "quantile": dict(color=COLOURS["quantile"]),
-        "continuous": dict(color=COLOURS["continuous"]),
-        "median": dict(color=COLOURS["median"]),
-        "mean": dict(color=COLOURS["mean"]),
-        "4-bins": dict(color=COLOURS["4-bins"]),
-        "8-bins": dict(color=COLOURS["8-bins"]),
-        "12-bins": dict(color=COLOURS["12-bins"]),
-        "16-bins": dict(color=COLOURS["16-bins"]),
-        "20-bins": dict(color=COLOURS["20-bins"]),
+        "ngboost": {"color": COLOURS["ngboost"]},
+        "ordboost": {"color": COLOURS["ordboost"]},
+        "uniform": {"color": COLOURS["uniform"]},
+        "quantile": {"color": COLOURS["quantile"]},
+        "continuous": {"color": COLOURS["continuous"]},
+        "median": {"color": COLOURS["median"]},
+        "mean": {"color": COLOURS["mean"]},
+        "4-bins": {"color": COLOURS["4-bins"]},
+        "8-bins": {"color": COLOURS["8-bins"]},
+        "12-bins": {"color": COLOURS["12-bins"]},
+        "16-bins": {"color": COLOURS["16-bins"]},
+        "20-bins": {"color": COLOURS["20-bins"]},
     }
 
     for label, results in model_results.items():
@@ -387,18 +386,18 @@ def plot_coverage(model_results, display_labels=None, save_path=None):
     """
     display_labels = display_labels or {}
     style = {
-        "ngboost": dict(color=COLOURS["ngboost"], marker="o"),
-        "ordboost": dict(color=COLOURS["ordboost"], marker="s"),
-        "uniform": dict(color=COLOURS["uniform"], marker="s"),
-        "quantile": dict(color=COLOURS["quantile"], marker="s"),
-        "continuous": dict(color=COLOURS["continuous"], marker="s"),
-        "mean": dict(color=COLOURS["mean"], marker="s"),
-        "median": dict(color=COLOURS["median"], marker="s"),
-        "4-bins": dict(color=COLOURS["4-bins"], marker="s"),
-        "8-bins": dict(color=COLOURS["8-bins"], marker="s"),
-        "12-bins": dict(color=COLOURS["12-bins"], marker="s"),
-        "16-bins": dict(color=COLOURS["16-bins"], marker="s"),
-        "20-bins": dict(color=COLOURS["20-bins"], marker="s"),
+        "ngboost": {"color": COLOURS["ngboost"], "marker": "o"},
+        "ordboost": {"color": COLOURS["ordboost"], "marker": "s"},
+        "uniform": {"color": COLOURS["uniform"], "marker": "s"},
+        "quantile": {"color": COLOURS["quantile"], "marker": "s"},
+        "continuous": {"color": COLOURS["continuous"], "marker": "s"},
+        "mean": {"color": COLOURS["mean"], "marker": "s"},
+        "median": {"color": COLOURS["median"], "marker": "s"},
+        "4-bins": {"color": COLOURS["4-bins"], "marker": "s"},
+        "8-bins": {"color": COLOURS["8-bins"], "marker": "s"},
+        "12-bins": {"color": COLOURS["12-bins"], "marker": "s"},
+        "16-bins": {"color": COLOURS["16-bins"], "marker": "s"},
+        "20-bins": {"color": COLOURS["20-bins"], "marker": "s"},
     }
 
     fig, ax = plt.subplots(figsize=(7, 5), sharex=True)
@@ -455,18 +454,18 @@ def plot_sharpness(model_results, display_labels=None, save_path=None):
     """
     display_labels = display_labels or {}
     style = {
-        "ngboost": dict(color=COLOURS["ngboost"], marker="o"),
-        "ordboost": dict(color=COLOURS["ordboost"], marker="s"),
-        "uniform": dict(color=COLOURS["uniform"], marker="s"),
-        "quantile": dict(color=COLOURS["quantile"], marker="s"),
-        "continuous": dict(color=COLOURS["continuous"], marker="s"),
-        "mean": dict(color=COLOURS["mean"], marker="s"),
-        "median": dict(color=COLOURS["median"], marker="s"),
-        "4-bins": dict(color=COLOURS["4-bins"], marker="s"),
-        "8-bins": dict(color=COLOURS["8-bins"], marker="s"),
-        "12-bins": dict(color=COLOURS["12-bins"], marker="s"),
-        "16-bins": dict(color=COLOURS["16-bins"], marker="s"),
-        "20-bins": dict(color=COLOURS["20-bins"], marker="s"),
+        "ngboost": {"color": COLOURS["ngboost"], "marker": "o"},
+        "ordboost": {"color": COLOURS["ordboost"], "marker": "s"},
+        "uniform": {"color": COLOURS["uniform"], "marker": "s"},
+        "quantile": {"color": COLOURS["quantile"], "marker": "s"},
+        "continuous": {"color": COLOURS["continuous"], "marker": "s"},
+        "mean": {"color": COLOURS["mean"], "marker": "s"},
+        "median": {"color": COLOURS["median"], "marker": "s"},
+        "4-bins": {"color": COLOURS["4-bins"], "marker": "s"},
+        "8-bins": {"color": COLOURS["8-bins"], "marker": "s"},
+        "12-bins": {"color": COLOURS["12-bins"], "marker": "s"},
+        "16-bins": {"color": COLOURS["16-bins"], "marker": "s"},
+        "20-bins": {"color": COLOURS["20-bins"], "marker": "s"},
     }
 
     fig, ax = plt.subplots(figsize=(7, 5))
@@ -519,18 +518,18 @@ def plot_winkler(model_results, display_labels=None, save_path=None):
     """
     display_labels = display_labels or {}
     style = {
-        "ngboost": dict(color=COLOURS["ngboost"], marker="o"),
-        "ordboost": dict(color=COLOURS["ordboost"], marker="s"),
-        "uniform": dict(color=COLOURS["uniform"], marker="s"),
-        "quantile": dict(color=COLOURS["quantile"], marker="s"),
-        "continuous": dict(color=COLOURS["continuous"], marker="s"),
-        "mean": dict(color=COLOURS["mean"], marker="s"),
-        "median": dict(color=COLOURS["median"], marker="s"),
-        "4-bins": dict(color=COLOURS["4-bins"], marker="s"),
-        "8-bins": dict(color=COLOURS["8-bins"], marker="s"),
-        "12-bins": dict(color=COLOURS["12-bins"], marker="s"),
-        "16-bins": dict(color=COLOURS["16-bins"], marker="s"),
-        "20-bins": dict(color=COLOURS["20-bins"], marker="s"),
+        "ngboost": {"color": COLOURS["ngboost"], "marker": "o"},
+        "ordboost": {"color": COLOURS["ordboost"], "marker": "s"},
+        "uniform": {"color": COLOURS["uniform"], "marker": "s"},
+        "quantile": {"color": COLOURS["quantile"], "marker": "s"},
+        "continuous": {"color": COLOURS["continuous"], "marker": "s"},
+        "mean": {"color": COLOURS["mean"], "marker": "s"},
+        "median": {"color": COLOURS["median"], "marker": "s"},
+        "4-bins": {"color": COLOURS["4-bins"], "marker": "s"},
+        "8-bins": {"color": COLOURS["8-bins"], "marker": "s"},
+        "12-bins": {"color": COLOURS["12-bins"], "marker": "s"},
+        "16-bins": {"color": COLOURS["16-bins"], "marker": "s"},
+        "20-bins": {"color": COLOURS["20-bins"], "marker": "s"},
     }
 
     fig, ax = plt.subplots(figsize=(7, 5))

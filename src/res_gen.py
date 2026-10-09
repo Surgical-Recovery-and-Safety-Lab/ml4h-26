@@ -5,7 +5,6 @@ import numpy as np
 from medpipe import MedpipeRegressor
 from medpipe.visualisation import themes
 from ordboost.mappers import BaseBinMapper
-from ordboost.metrics import pit_diagnostics
 
 from src.helpers import (
     compute_metrics,
@@ -70,7 +69,6 @@ def generate_results(
     X_test = ordboost_pipe.data_split.X_test
     y_test = ordboost_pipe.data_split.y_test.to_numpy().squeeze()
 
-    X_train = ordboost_pipe.data_split.X_train
     y_train = ordboost_pipe.data_split.y_train.to_numpy().squeeze()
 
     # Create the CDF distributions and predictions for other models
@@ -424,7 +422,7 @@ def generate_prediction_table(results, interval, order, display_labels, save_pat
     header_row_2 = [r"days"]
     for model in order:
         if model == "hgbr" or model == "mord":
-            header_row_2.append(rf"point-estimate")
+            header_row_2.append(r"point-estimate")
         else:
             header_row_2.append(rf"median [{interval:.0f}\% PI]")
     lines.append(" & ".join(header_row_2) + r" \\")
@@ -522,7 +520,6 @@ def generate_data_distribution(
     """
     bin_edges = np.array(mapper.bin_edges)
     y_binned = mapper.digitize(y_test, bin_edges)
-    primary_color = THEME.primary_color
 
     plot_bins = np.concatenate(([0, 1], bin_edges[2:] - 1, [89]))
     plot_binned_vs_continuous(

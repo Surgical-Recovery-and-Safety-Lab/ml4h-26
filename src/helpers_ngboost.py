@@ -8,12 +8,6 @@ from __future__ import annotations
 import numpy as np
 import properscoring as ps
 import xarray as xr
-from ordboost.metrics import (
-    baseline_distribution,
-    crps_score,
-    interval_coverage_rate,
-    sharpness,
-)
 from scores.probability import PitFcstAtObs
 
 
@@ -112,7 +106,7 @@ class NGBoostDistAdapter:
         """
         return np.asarray(self._dist.cdf(y))
 
-    def __getitem__(self, mask) -> "NGBoostDistAdapter":
+    def __getitem__(self, mask) -> NGBoostDistAdapter:
         """Slice the samples with a boolean mask.
 
         The underlying scipy distribution is re-frozen on the masked
