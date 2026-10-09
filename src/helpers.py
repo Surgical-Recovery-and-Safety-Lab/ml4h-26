@@ -228,7 +228,7 @@ def marginal_calibration(y_true, dist, grid_y, mapper):
     return results
 
 
-def coverage_sharpness_curve(y_true, dist, coverage_levels, tolerance=0.0):
+def coverage_sharpness_curve(y_true, dist, coverage_levels):
     """Compute coverage, sharpness and Winkler score across coverage levels.
 
     The alpha convention matches ordboost.metrics: alpha = 1 - coverage / 100,
@@ -243,8 +243,6 @@ def coverage_sharpness_curve(y_true, dist, coverage_levels, tolerance=0.0):
     coverage_levels : array-like
         Nominal central-interval coverage levels in percent (e.g. 90 for a
         90% interval).
-    tolerance : float, default=0.0
-        Currently unused.
 
     Returns
     -------
