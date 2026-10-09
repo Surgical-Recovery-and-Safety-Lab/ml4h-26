@@ -196,7 +196,7 @@ def plot_pit_histogram_grouped(
     }
 
     if ax is None:
-        _, ax = plt.subplots(figsize=(7, 5))
+        _, ax = plt.subplots(figsize=(10, 8))
 
     bin_width = 1.0 / n_bins
     group_width = bin_width * 0.9
@@ -220,7 +220,7 @@ def plot_pit_histogram_grouped(
             align="edge",
             color=style.get(model, None),
             edgecolor="black",
-            linewidth=1.5,
+            linewidth=0.5,
             label=label,
         )
 
