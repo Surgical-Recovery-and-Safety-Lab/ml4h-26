@@ -41,7 +41,6 @@ def plot_binned_vs_continuous(
     n_fine_bins: int = 90,
     density: bool = False,
     log_scale: bool = True,
-    ax=None,
     save_path=None,
 ):
     """Plot the continuous target and its binned version.
@@ -60,23 +59,22 @@ def plot_binned_vs_continuous(
     colors : list[str]
         Colors to plot with.
     n_fine_bins : int, default=90
-        Number of bins for the continuous histogram. Currently unused, the
-        histogram always uses 90 bins.
+        Number of bins for the continuous histogram.
     density : bool, default=False
         If True, plot binned bars as counts / bin_width, so bar *area*
         (not just height) is comparable across very uneven bin widths. If
         False, plot raw counts.
     log_scale : bool, default=True
         Use a log y-axis.
-    ax : matplotlib.axes.Axes, optional
-        Currently unused, a new figure is always created.
     save_path : str or Path, optional
         If given, the figure is saved there.
 
     Returns
     -------
-    matplotlib.axes.Axes or None
-        The `ax` argument, returned unchanged.
+    fig : matplotlib.figure.Figure
+        The figure.
+    axes : np.ndarray of matplotlib.axes.Axes
+        The two stacked axes (continuous on top, binned below).
 
     """
     y_cont = np.asarray(y_cont, dtype=float)
@@ -89,7 +87,7 @@ def plot_binned_vs_continuous(
     # Continuous distribution: fine fixed-width histogram.
     axes[0].hist(
         y_cont,
-        bins=90,
+        bins=n_fine_bins,
         color=colors[0],
         edgecolor="black",
         label=r"Continuous $DAOH_{90}$",
@@ -134,9 +132,9 @@ def plot_binned_vs_continuous(
     axes[1].spines["right"].set_visible(False)
 
     if save_path is not None:
-        fig.figure.savefig(save_path, dpi=300, bbox_inches="tight")
+        fig.savefig(save_path, dpi=300, bbox_inches="tight")
 
-    return ax
+    return fig, axes
 
 
 def plot_sample_cdfs(model_results, colors, title, save_path=None):
