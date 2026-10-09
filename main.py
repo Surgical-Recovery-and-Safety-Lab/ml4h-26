@@ -31,13 +31,14 @@ def run_model(model: Literal["ordboost", "ngboost", "HGBr", "mord"]) -> None:
 
 
 def run_experiment(
-    experiment: Literal["binning", "mappers"], run_flag: Literal["run", "results"]
+    experiment: Literal["n_bins", "bin_dist", "mappers"],
+    run_flag: Literal["run", "results"],
 ) -> None:
     """Run the selected experiment.
 
     Parameters
     ----------
-    experiment : str, {"binning", "mappers"}
+    experiment : str, {"n_bins", "bin_dist", "mappers"}
         Selected experiment to run.
     run_flag : str, {"run", "results"}
         Flag to select how to run the experiment. The `run` mode fits all the
@@ -118,7 +119,9 @@ if __name__ == "__main__":
         description="Run one of the available experiments",
     )
     exp_parser.add_argument(
-        "experiment", choices=["binning", "mappers"], help="experiment to run"
+        "experiment",
+        choices=["n_bins", "bin_dist", "mappers"],
+        help="experiment to run",
     )
     exp_group = exp_parser.add_mutually_exclusive_group(required=True)
     exp_group.add_argument(
