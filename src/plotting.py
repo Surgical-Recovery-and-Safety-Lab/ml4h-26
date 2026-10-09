@@ -209,7 +209,8 @@ def plot_pit_histogram_grouped(
     ----------
     model_hists : dict
         Model name -> output of `pit_histogram` (keys "alpha" and
-        "hist_values").
+        "hist_values"). The 95% CIs ("alpha_ci" and "hist_ci"), if present,
+        are shown as error bars on the bars and in the legend.
     display_labels : dict[str, str], optional
         Model name -> display name. Defaults to the model name.
     n_bins : int, default=20
@@ -257,11 +258,15 @@ def plot_pit_histogram_grouped(
         bin_lefts = bin_centres - bin_width / 2.0
         bar_starts = bin_lefts + i * bar_width + (bin_width - group_width) / 2.0
 
+        alpha = float(model_hists[model]["alpha"].values)
         label = (
             f"{display_labels.get(model, model)}"
             + r" $\alpha$ score: "
-            + f"{model_hists[model]['alpha'].values:.3f}"
+            + f"{alpha:.3f}"
         )
+        if "alpha_ci" in model_hists[model]:
+            a_low, a_high = model_hists[model]["alpha_ci"]
+            label += f" [{a_low:.3f}, {a_high:.3f}]"
         ax.bar(
             bar_starts,
             hist.values,
@@ -272,6 +277,25 @@ def plot_pit_histogram_grouped(
             linewidth=0.5,
             label=label,
         )
+
+        if "hist_ci" in model_hists[model]:
+            lower, upper = model_hists[model]["hist_ci"]
+            centres = bar_starts + bar_width / 2.0
+            yerr = np.vstack(
+                [
+                    np.clip(hist.values - lower, 0, None),
+                    np.clip(upper - hist.values, 0, None),
+                ]
+            )
+            ax.errorbar(
+                centres,
+                hist.values,
+                yerr=yerr,
+                fmt="none",
+                ecolor="black",
+                elinewidth=0.8,
+                capsize=1.5,
+            )
 
     ax.axhline(
         1.0 / n_bins,
@@ -289,9 +313,8 @@ def plot_pit_histogram_grouped(
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    ax.legend(
-        frameon=False,
-    )
+    # Below the axes, the CIs make the labels too long to sit over the bars
+    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.12))
 
     if save_path is not None:
         ax.figure.savefig(save_path, dpi=300, bbox_inches="tight")
@@ -370,87 +393,43 @@ def plot_marginal_calibration(model_results, display_labels, save_path=None, ax=
     return ax
 
 
-def plot_coverage(model_results, display_labels=None, save_path=None):
-    """Plot the empirical coverage against the nominal coverage.
+def _plot_coverage_metric(
+    model_results,
+    key,
+    ylabel,
+    title,
+    display_labels=None,
+    save_path=None,
+    scale=1.0,
+    ylim=None,
+    ideal_line=False,
+):
+    """Plot one metric against the nominal coverage level, with CI error bars.
 
-    One line is drawn per model, along with the ideal diagonal.
-
-    Parameters
-    ----------
-    model_results : dict
-        Model name -> output of `coverage_sharpness_curve`.
-    display_labels : dict[str, str], optional
-        Model name -> display name. Defaults to the model name.
-    save_path : str or Path, optional
-        If given, the figure is saved there.
-
-    Returns
-    -------
-    fig : matplotlib.figure.Figure
-        The figure.
-    ax : matplotlib.axes.Axes
-        The axes.
-
-    """
-    display_labels = display_labels or {}
-    style = {
-        "ngboost": {"color": COLOURS["ngboost"], "marker": "o"},
-        "ordboost": {"color": COLOURS["ordboost"], "marker": "s"},
-        "uniform": {"color": COLOURS["uniform"], "marker": "s"},
-        "quantile": {"color": COLOURS["quantile"], "marker": "s"},
-        "continuous": {"color": COLOURS["continuous"], "marker": "s"},
-        "mean": {"color": COLOURS["mean"], "marker": "s"},
-        "median": {"color": COLOURS["median"], "marker": "s"},
-        "4-bins": {"color": COLOURS["4-bins"], "marker": "s"},
-        "8-bins": {"color": COLOURS["8-bins"], "marker": "s"},
-        "12-bins": {"color": COLOURS["12-bins"], "marker": "s"},
-        "16-bins": {"color": COLOURS["16-bins"], "marker": "s"},
-        "20-bins": {"color": COLOURS["20-bins"], "marker": "s"},
-    }
-
-    fig, ax = plt.subplots(figsize=(7, 5), sharex=True)
-
-    for model, results in model_results.items():
-        ax.plot(
-            results["coverage_levels"],
-            results["empirical_coverage"] * 100,
-            label=display_labels.get(model, model),
-            **style.get(model, {}),
-            linewidth=2,
-        )
-    ax.plot(
-        [0, 100], [0, 100], linestyle="--", color="black", linewidth=1.5, label="Ideal"
-    )
-    ax.set_xlabel("Nominal coverage (%)", fontweight="bold")
-    ax.set_ylabel("Empirical coverage (%)", fontweight="bold")
-    ax.set_title("Coverage reliability", fontweight="bold")
-
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 100)
-    ax.legend(frameon=False)
-
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-
-    fig.tight_layout()
-    if save_path is not None:
-        fig.savefig(save_path, dpi=300, bbox_inches="tight")
-    return fig, ax
-
-
-def plot_sharpness(model_results, display_labels=None, save_path=None):
-    """Plot the sharpness across nominal coverage levels.
-
-    One line is drawn per model.
+    One line is drawn per model. The models are shifted slightly along the x
+    axis so that overlapping error bars remain readable.
 
     Parameters
     ----------
     model_results : dict
         Model name -> output of `coverage_sharpness_curve`.
+    key : str
+        Metric to plot. Its 95% CI is read from the "<key>_ci" entry, and
+        error bars are skipped if it is missing.
+    ylabel : str
+        Label of the y axis.
+    title : str
+        Title of the plot.
     display_labels : dict[str, str], optional
         Model name -> display name. Defaults to the model name.
     save_path : str or Path, optional
         If given, the figure is saved there.
+    scale : float, default=1.0
+        Factor applied to the metric and its CI, e.g. 100 for percentages.
+    ylim : tuple[float, float], optional
+        Limits of the y axis.
+    ideal_line : bool, default=False
+        Draw the y = x diagonal, used for the coverage reliability plot.
 
     Returns
     -------
@@ -478,19 +457,45 @@ def plot_sharpness(model_results, display_labels=None, save_path=None):
 
     fig, ax = plt.subplots(figsize=(7, 5))
 
-    for model, results in model_results.items():
-        ax.plot(
-            results["coverage_levels"],
-            results["sharpness"],
+    n_models = len(model_results)
+    for i, (model, results) in enumerate(model_results.items()):
+        x = np.asarray(results["coverage_levels"], dtype=float)
+        x = x + 0.4 * (i - (n_models - 1) / 2.0)  # Dodge overlapping models
+        y = np.asarray(results[key]) * scale
+
+        yerr = None
+        if f"{key}_ci" in results:
+            lower, upper = (np.asarray(b) * scale for b in results[f"{key}_ci"])
+            yerr = np.vstack([np.clip(y - lower, 0, None), np.clip(upper - y, 0, None)])
+
+        ax.errorbar(
+            x,
+            y,
+            yerr=yerr,
             label=display_labels.get(model, model),
-            **style.get(model, {}),
             linewidth=2,
+            elinewidth=1,
+            capsize=2,
+            **style.get(model, {}),
         )
 
-    ax.set_xlim(0, 100)
+    if ideal_line:
+        ax.plot(
+            [0, 100],
+            [0, 100],
+            linestyle="--",
+            color="black",
+            linewidth=1.5,
+            label="Ideal",
+        )
+
     ax.set_xlabel("Nominal coverage (%)", fontweight="bold")
-    ax.set_ylabel("Mean interval width (days)", fontweight="bold")
-    ax.set_title("Sharpness", fontweight="bold")
+    ax.set_ylabel(ylabel, fontweight="bold")
+    ax.set_title(title, fontweight="bold")
+
+    ax.set_xlim(0, 100)
+    if ylim is not None:
+        ax.set_ylim(*ylim)
     ax.legend(frameon=False)
 
     ax.spines["top"].set_visible(False)
@@ -500,12 +505,80 @@ def plot_sharpness(model_results, display_labels=None, save_path=None):
     if save_path is not None:
         fig.savefig(save_path, dpi=300, bbox_inches="tight")
     return fig, ax
+
+
+def plot_coverage(model_results, display_labels=None, save_path=None):
+    """Plot the empirical coverage against the nominal coverage (figure 5).
+
+    One line with 95% CI error bars is drawn per model, along with the ideal
+    diagonal.
+
+    Parameters
+    ----------
+    model_results : dict
+        Model name -> output of `coverage_sharpness_curve`.
+    display_labels : dict[str, str], optional
+        Model name -> display name. Defaults to the model name.
+    save_path : str or Path, optional
+        If given, the figure is saved there.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure.
+    ax : matplotlib.axes.Axes
+        The axes.
+
+    """
+    return _plot_coverage_metric(
+        model_results,
+        "empirical_coverage",
+        "Empirical coverage (%)",
+        "Coverage reliability",
+        display_labels=display_labels,
+        save_path=save_path,
+        scale=100.0,
+        ylim=(0, 100),
+        ideal_line=True,
+    )
+
+
+def plot_sharpness(model_results, display_labels=None, save_path=None):
+    """Plot the sharpness across nominal coverage levels (figure 4).
+
+    One line with 95% CI error bars is drawn per model.
+
+    Parameters
+    ----------
+    model_results : dict
+        Model name -> output of `coverage_sharpness_curve`.
+    display_labels : dict[str, str], optional
+        Model name -> display name. Defaults to the model name.
+    save_path : str or Path, optional
+        If given, the figure is saved there.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure.
+    ax : matplotlib.axes.Axes
+        The axes.
+
+    """
+    return _plot_coverage_metric(
+        model_results,
+        "sharpness",
+        "Mean interval width (days)",
+        "Sharpness",
+        display_labels=display_labels,
+        save_path=save_path,
+    )
 
 
 def plot_winkler(model_results, display_labels=None, save_path=None):
     """Plot the Winkler score across nominal coverage levels.
 
-    One line is drawn per model.
+    One line with 95% CI error bars is drawn per model.
 
     Parameters
     ----------
@@ -524,43 +597,11 @@ def plot_winkler(model_results, display_labels=None, save_path=None):
         The axes.
 
     """
-    display_labels = display_labels or {}
-    style = {
-        "ngboost": {"color": COLOURS["ngboost"], "marker": "o"},
-        "ordboost": {"color": COLOURS["ordboost"], "marker": "s"},
-        "uniform": {"color": COLOURS["uniform"], "marker": "s"},
-        "quantile": {"color": COLOURS["quantile"], "marker": "s"},
-        "continuous": {"color": COLOURS["continuous"], "marker": "s"},
-        "mean": {"color": COLOURS["mean"], "marker": "s"},
-        "median": {"color": COLOURS["median"], "marker": "s"},
-        "4-bins": {"color": COLOURS["4-bins"], "marker": "s"},
-        "8-bins": {"color": COLOURS["8-bins"], "marker": "s"},
-        "12-bins": {"color": COLOURS["12-bins"], "marker": "s"},
-        "16-bins": {"color": COLOURS["16-bins"], "marker": "s"},
-        "20-bins": {"color": COLOURS["20-bins"], "marker": "s"},
-    }
-
-    fig, ax = plt.subplots(figsize=(7, 5))
-
-    for model, results in model_results.items():
-        ax.plot(
-            results["coverage_levels"],
-            results["winkler"],
-            label=display_labels.get(model, model),
-            **style.get(model, {}),
-            linewidth=2,
-        )
-
-    ax.set_xlim(0, 100)
-    ax.set_xlabel("Nominal coverage (%)", fontweight="bold")
-    ax.set_ylabel("Winkler score", fontweight="bold")
-    ax.set_title("Winkler score", fontweight="bold")
-    ax.legend(frameon=False)
-
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-
-    fig.tight_layout()
-    if save_path is not None:
-        fig.savefig(save_path, dpi=300, bbox_inches="tight")
-    return fig, ax
+    return _plot_coverage_metric(
+        model_results,
+        "winkler",
+        "Winkler score",
+        "Winkler score",
+        display_labels=display_labels,
+        save_path=save_path,
+    )

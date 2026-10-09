@@ -12,10 +12,8 @@ from ordboost.mappers import BaseBinMapper
 from ordboost.metrics import (
     baseline_distribution,
     pit_diagnostics,
-    sharpness,
-    winkler_score,
 )
-from scores.probability import crps_cdf
+from scores.probability import PitFcstAtObs, crps_cdf
 
 from src.bootstrap import (
     BOOTSTRAP_SEED,
@@ -204,8 +202,15 @@ def pit_histogram(
     dist: ContinuousPredictiveDistribution,
     mapper: BaseBinMapper | None = None,
     n_bins: int = 20,
+    n_boot: int = N_BOOT,
+    seed: int = BOOTSTRAP_SEED,
 ) -> dict:
-    """Compute the PIT histogram and alpha score for a model.
+    """Compute the PIT histogram and alpha score for a model, with 95% CIs.
+
+    The PIT intervals are computed once. As they are rounded, they take few
+    distinct values, so each bootstrap resample is evaluated as a weighted
+    PIT over the distinct intervals (exactly equal to the PIT of the
+    resampled data, but much faster).
 
     Parameters
     ----------
@@ -218,12 +223,19 @@ def pit_histogram(
         NGBoostDistAdapter.
     n_bins : int, default=20
         Number of histogram bins.
+    n_boot : int, default=1000
+        Number of bootstrap iterations.
+    seed : int, default=42
+        Seed of the bootstrap random generator. The same seed gives the same
+        resamples for every model.
 
     Returns
     -------
     dict
-        Dictionary with keys "alpha" (the PIT alpha score) and "hist_values"
-        (the histogram values).
+        Dictionary with keys "alpha" (the PIT alpha score), "hist_values"
+        (the histogram values), "alpha_ci" (lower and upper bound of the
+        alpha score as a tuple) and "hist_ci" (lower and upper bounds of the
+        histogram values as a tuple of arrays).
 
     Raises
     ------
@@ -245,7 +257,31 @@ def pit_histogram(
     alpha = pit.alpha_score()
     hist_values = pit.hist_values(n_bins)
 
-    return {"alpha": alpha, "hist_values": hist_values}
+    # Group the samples by distinct PIT interval
+    endpoints = pit.pit_uniform_endpoints.values
+    pairs, inverse = np.unique(endpoints.T, axis=0, return_inverse=True)
+    inverse = inverse.ravel()
+    lower_da = xr.DataArray(pairs[:, 0], dims=["sample"])
+    upper_da = xr.DataArray(pairs[:, 1], dims=["sample"])
+
+    def statistic(idx):
+        counts = np.bincount(inverse[idx], minlength=len(pairs)).astype(float)
+        boot_pit = PitFcstAtObs(
+            upper_da,
+            fcst_at_obs_left=lower_da,
+            weights=xr.DataArray(counts, dims=["sample"]),
+        )
+        return np.append(boot_pit.hist_values(n_bins).values, boot_pit.alpha_score())
+
+    draws = bootstrap_statistic(statistic, len(y_true_arr), n_boot, seed)
+    lower, upper = percentile_interval(draws)
+
+    return {
+        "alpha": alpha,
+        "hist_values": hist_values,
+        "alpha_ci": (float(lower[-1]), float(upper[-1])),
+        "hist_ci": (lower[:-1], upper[:-1]),
+    }
 
 
 def marginal_calibration(
@@ -319,11 +355,19 @@ def marginal_calibration(
     return grid, contribution.mean(axis=0), lower, upper
 
 
-def coverage_sharpness_curve(y_true, dist, coverage_levels):
+def coverage_sharpness_curve(
+    y_true,
+    dist,
+    coverage_levels,
+    n_boot: int = N_BOOT,
+    seed: int = BOOTSTRAP_SEED,
+):
     """Compute coverage, sharpness and Winkler score across coverage levels.
 
     The alpha convention matches ordboost.metrics: alpha = 1 - coverage / 100,
-    e.g. coverage=90 gives alpha=0.10.
+    e.g. coverage=90 gives alpha=0.10. The per-sample values are computed
+    once for every level, and the 95% CIs are percentile intervals over
+    bootstrap resamples of the test samples.
 
     Parameters
     ----------
@@ -334,38 +378,59 @@ def coverage_sharpness_curve(y_true, dist, coverage_levels):
     coverage_levels : array-like
         Nominal central-interval coverage levels in percent (e.g. 90 for a
         90% interval).
+    n_boot : int, default=1000
+        Number of bootstrap iterations.
+    seed : int, default=42
+        Seed of the bootstrap random generator. The same seed gives the same
+        resamples for every model.
 
     Returns
     -------
-    dict[str, np.ndarray]
-        Dictionary with keys "coverage_levels", "empirical_coverage",
+    dict
+        Dictionary with the keys "coverage_levels", "empirical_coverage",
         "winkler" and "sharpness" (mean interval width), each with one value
-        per coverage level.
+        per coverage level. Each metric also has a "<metric>_ci" key holding
+        the (lower, upper) bounds of its 95% CI.
 
     """
     y_true_arr = np.asarray(y_true, dtype=float)
     coverage_levels = np.asarray(coverage_levels, dtype=float)
     alphas = 1.0 - coverage_levels / 100.0
+    n_samples, n_levels = len(y_true_arr), len(alphas)
 
-    empirical_coverage = np.empty_like(alphas)
-    sharp = np.empty_like(alphas)
-    wink = np.empty_like(alphas)
+    covered = np.empty((n_samples, n_levels))
+    width = np.empty((n_samples, n_levels))
+    winkler = np.empty((n_samples, n_levels))
 
     for i, alpha in enumerate(alphas):
-        empirical_coverage[i] = interval_coverage(
-            y_true_arr,
-            dist,
-            alpha=alpha,
+        lower, upper = dist.interval(alpha=alpha)
+        covered[:, i] = (y_true_arr >= np.round(lower)) & (
+            y_true_arr <= np.round(upper)
         )
-        sharp[i] = sharpness(dist, alpha=alpha)
-        wink[i] = winkler_score(y_true_arr, dist, alpha)
+        width[:, i] = upper - lower
+        winkler[:, i] = (
+            width[:, i]
+            + (2.0 / alpha) * (lower - y_true_arr) * (y_true_arr < lower)
+            + (2.0 / alpha) * (y_true_arr - upper) * (y_true_arr > upper)
+        )
 
-    return {
-        "coverage_levels": coverage_levels,
-        "empirical_coverage": empirical_coverage,
-        "winkler": wink,
-        "sharpness": sharp,
-    }
+    per_sample = np.hstack([covered, width, winkler])
+
+    def statistic(idx):
+        counts = np.bincount(idx, minlength=n_samples)
+        return counts @ per_sample / n_samples
+
+    estimates = per_sample.mean(axis=0)
+    draws = bootstrap_statistic(statistic, n_samples, n_boot, seed)
+    lower, upper = percentile_interval(draws)
+
+    results = {"coverage_levels": coverage_levels}
+    names = ["empirical_coverage", "sharpness", "winkler"]
+    for k, name in enumerate(names):
+        block = slice(k * n_levels, (k + 1) * n_levels)
+        results[name] = estimates[block]
+        results[f"{name}_ci"] = (lower[block], upper[block])
+    return results
 
 
 def interval_coverage(
