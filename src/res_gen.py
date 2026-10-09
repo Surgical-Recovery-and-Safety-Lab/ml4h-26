@@ -234,8 +234,10 @@ def generate_experiment_results(
     expected = {f"v{i}" for i in range(1, n_artifacts + 1)}
     found = {p.name for p in artifacts_dir.iterdir() if p.is_dir()}
     if missing := expected - found:
-        msg = f"{artifacts_dir} is missing subfolders: {sorted(missing)}. "
-        "Run the experiment command with the --run flag first."
+        msg = (
+            f"{artifacts_dir} is missing subfolders: {sorted(missing)}. "
+            "Run the experiment command with the --run flag first."
+        )
         raise FileNotFoundError(msg)
 
     pipes = [
