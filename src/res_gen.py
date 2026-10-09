@@ -322,9 +322,7 @@ def generate_experiment_results(
 
     results = {}
     for model, dist in models.items():
-        results[model] = coverage_sharpness_curve(
-            y_test, dist, coverage_levels, tolerance=1e-4
-        )
+        results[model] = coverage_sharpness_curve(y_test, dist, coverage_levels)
 
     plot_winkler(
         results,
