@@ -60,9 +60,9 @@ def generate_results(
     mord_pipe = MedpipeRegressor.load(f"artifacts/mord/{mord_version}")
 
     ordboost_pipe._orchestrator.prepare_data()
+    mord_pipe._orchestrator.prepare_data()
 
     (ordboost_pipe.run_dir / "results").mkdir(parents=True, exist_ok=True)
-    (ngboost_pipe.run_dir / "results").mkdir(parents=True, exist_ok=True)
     (ordboost_pipe.run_dir / "plots").mkdir(parents=True, exist_ok=True)
     (ngboost_pipe.run_dir / "plots").mkdir(parents=True, exist_ok=True)
 
@@ -73,14 +73,16 @@ def generate_results(
     X_train = ordboost_pipe.data_split.X_train
     y_train = ordboost_pipe.data_split.y_train.to_numpy().squeeze()
 
-    # Create the CDF distributions
+    # Create the CDF distributions and predictions for other models
+    y_preds = {}
     ngboost_dist = wrap_ngboost_pred_dist(
-        ngboost_pipe.models["DAOH_90"].predict_dist(
-            X_test,
-        )
+        ngboost_pipe.models["DAOH_90"].predict_dist(X_test)
     )
-    ordboost_dist = ordboost_pipe.models["DAOH_90"].predict_dist(
-        X_test,
+    ordboost_dist = ordboost_pipe.models["DAOH_90"].predict_dist(X_test)
+    y_preds["hgbr"] = hgbr_pipe.predict(X_test, outcome="DAOH_90")
+    y_preds["mord"] = mord_pipe.predict(
+        mord_pipe.data_split.X_test,
+        outcome="DAOH_90",
     )
 
     models = {
