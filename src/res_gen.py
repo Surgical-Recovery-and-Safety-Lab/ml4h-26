@@ -169,7 +169,6 @@ def generate_results(
 
     plot_pit_histogram_grouped(
         results,
-        colors=THEME.palette,
         display_labels=display_labels,
         save_path=ordboost_pipe.run_dir / "plots/pit_histogram.png",
     )
@@ -180,7 +179,6 @@ def generate_results(
 
     plot_marginal_calibration(
         results,
-        colors=THEME.palette,
         display_labels=display_labels,
         save_path=ordboost_pipe.run_dir / "plots/marginal_calibration.png",
     )
@@ -193,14 +191,12 @@ def generate_results(
 
     plot_coverage(
         results,
-        THEME.palette,
         display_labels=display_labels,
         save_path=ordboost_pipe.run_dir / "plots/coverage.png",
     )
 
     plot_sharpness(
         results,
-        THEME.palette,
         display_labels=display_labels,
         save_path=ordboost_pipe.run_dir / "plots/sharpness.png",
     )
@@ -306,7 +302,6 @@ def generate_experiment_results(
 
     plot_pit_histogram_grouped(
         results,
-        colors=THEME.palette,
         display_labels=display_labels,
         save_path=src_dir / "plots/pit_histogram.png",
     )
@@ -319,7 +314,6 @@ def generate_experiment_results(
 
     plot_marginal_calibration(
         results,
-        colors=THEME.palette,
         display_labels=display_labels,
         save_path=src_dir / "plots/marginal_calibration.png",
     )
@@ -334,20 +328,17 @@ def generate_experiment_results(
 
     plot_winkler(
         results,
-        THEME.palette,
         display_labels=display_labels,
         save_path=src_dir / "plots/winkler.png",
     )
     plot_coverage(
         results,
-        THEME.palette,
         display_labels=display_labels,
         save_path=src_dir / "plots/coverage.png",
     )
 
     plot_sharpness(
         results,
-        THEME.palette,
         display_labels=display_labels,
         save_path=src_dir / "plots/sharpness.png",
     )
