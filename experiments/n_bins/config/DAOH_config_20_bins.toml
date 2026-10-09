@@ -1,5 +1,5 @@
 [meta]
-project_name = "uniform"
+project_name = "20-bins"
 run_mode = "fast"
 verbose = 1
 
@@ -29,7 +29,7 @@ algorithm = "OrdBoostRegressor"
 [default_model.hyperparameters]
 learning_rate = 0.1
 bin_strategy = "uniform"
-n_bins = 10
+n_bins = 20
 mapper = "uniform"
 loss = "log_loss"
 monotonicity = "isotonic"

@@ -1,5 +1,5 @@
 [meta]
-project_name = "ordboost"
+project_name = "8-bins"
 run_mode = "fast"
 verbose = 1
 
@@ -28,7 +28,8 @@ algorithm = "OrdBoostRegressor"
 
 [default_model.hyperparameters]
 learning_rate = 0.1
-bin_edges = [[1, 31, 61, 71, 76, 80, 86, 88]]
+bin_strategy = "uniform"
+n_bins = 8
 mapper = "uniform"
 loss = "log_loss"
 monotonicity = "isotonic"
