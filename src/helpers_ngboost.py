@@ -34,36 +34,101 @@ class NGBoostDistAdapter:
         self._dist = scipy_frozen_dist
 
     def mean(self) -> np.ndarray:
-        """Per-sample mean."""
+        """Compute the per-sample mean.
+
+        Returns
+        -------
+        np.ndarray of shape (n_samples,)
+            Mean of each predicted distribution.
+
+        """
         return np.asarray(self._dist.mean())
 
     def median(self) -> np.ndarray:
-        """Per-sample median."""
+        """Compute the per-sample median.
+
+        Returns
+        -------
+        np.ndarray of shape (n_samples,)
+            Median of each predicted distribution.
+
+        """
         return np.asarray(self._dist.median())
 
     def ppf(self, q) -> np.ndarray:
-        """Per-sample quantile at level(s) q."""
+        """Compute the per-sample quantile at level(s) q.
+
+        Parameters
+        ----------
+        q : float or array-like
+            Quantile level(s) in [0, 1].
+
+        Returns
+        -------
+        np.ndarray
+            Quantile of each predicted distribution at `q`.
+
+        """
         return np.asarray(self._dist.ppf(q))
 
     def interval(self, alpha: float = 0.10):
-        """Central prediction interval at significance level alpha.
+        """Compute the central prediction interval at significance level alpha.
 
-        Note: scipy's own `.interval()` takes a *confidence* level (the
-        fraction covered), the inverse convention from ordboost's alpha
-        (tail significance) -- converted here so callers use the same
-        alpha= convention as ordboost.PredictiveDistribution throughout.
+        Scipy's own `.interval()` takes a *confidence* level (the fraction
+        covered), the inverse convention from ordboost's alpha (tail
+        significance). It is converted here so callers use the same alpha
+        convention as ordboost.PredictiveDistribution throughout.
+
+        Parameters
+        ----------
+        alpha : float, default=0.10
+            Tail significance level (e.g. 0.10 specifies a 90% interval).
+
+        Returns
+        -------
+        lower : np.ndarray of shape (n_samples,)
+            Lower bound of the interval for each sample.
+        upper : np.ndarray of shape (n_samples,)
+            Upper bound of the interval for each sample.
+
         """
         lower, upper = self._dist.interval(1.0 - alpha)
         return np.asarray(lower), np.asarray(upper)
 
     def cdf(self, y) -> np.ndarray:
-        """CDF at y: scalar broadcasts across all samples; an array of
-        length n_samples evaluates each sample at its own y."""
+        """Evaluate the CDF at y.
+
+        Parameters
+        ----------
+        y : float or array-like of shape (n_samples,)
+            Point(s) to evaluate at. A scalar broadcasts across all samples;
+            an array evaluates each sample at its own y.
+
+        Returns
+        -------
+        np.ndarray of shape (n_samples,)
+            CDF values.
+
+        """
         return np.asarray(self._dist.cdf(y))
 
     def __getitem__(self, mask) -> "NGBoostDistAdapter":
-        """Boolean-mask row-slicing, re-freezing the underlying scipy
-        distribution on the masked parameter arrays."""
+        """Slice the samples with a boolean mask.
+
+        The underlying scipy distribution is re-frozen on the masked
+        parameter arrays.
+
+        Parameters
+        ----------
+        mask : array-like of bool of shape (n_samples,)
+            Mask selecting the samples to keep.
+
+        Returns
+        -------
+        NGBoostDistAdapter
+            Adapter over the selected samples.
+
+        """
         mask = np.asarray(mask, dtype=bool)
         new_args = tuple(
             np.asarray(a)[mask] if np.ndim(a) > 0 else a for a in self._dist.args
@@ -76,9 +141,25 @@ class NGBoostDistAdapter:
 
 
 def crps_ngboost(y_true, dist: NGBoostDistAdapter) -> float:
-    """Model CRPS for an NGBoostDistAdapter: closed-form for a Normal
-    Dist (fast), else per-sample numerical quadrature via properscoring
-    (slower -- consider subsampling large test sets)."""
+    """Compute the mean CRPS of an NGBoostDistAdapter.
+
+    The CRPS is closed-form for a Normal distribution (fast), otherwise it
+    uses per-sample numerical quadrature via properscoring (slower, consider
+    subsampling large test sets).
+
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        True target values.
+    dist : NGBoostDistAdapter
+        Predicted distributions.
+
+    Returns
+    -------
+    float
+        CRPS averaged over the samples.
+
+    """
     y_true_arr = np.asarray(y_true, dtype=float)
     frozen = dist._dist
     if getattr(frozen.dist, "name", "") == "norm":
@@ -96,8 +177,28 @@ def crps_ngboost(y_true, dist: NGBoostDistAdapter) -> float:
 
 
 def marginal_calibration_curve_ngboost(y_true, dist, grid_y):
-    """Marginal calibration for an NGBoostDistAdapter, evaluated over a
-    caller-supplied grid_y (no fitted grid available)."""
+    """Compute the marginal calibration curve of an NGBoostDistAdapter.
+
+    The curve is evaluated over a caller-supplied grid, as no fitted grid is
+    available.
+
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        True target values.
+    dist : NGBoostDistAdapter
+        Predicted distributions.
+    grid_y : array-like
+        Grid points to evaluate the curve on.
+
+    Returns
+    -------
+    grid_y : np.ndarray
+        The evaluation grid.
+    diff : np.ndarray
+        Empirical CDF minus mean predicted CDF at each grid point.
+
+    """
     y_true_arr = np.asarray(y_true, dtype=float)
     grid_y = np.asarray(grid_y, dtype=float)
     mean_cdf = np.array([np.mean(dist.cdf(y)) for y in grid_y])
@@ -106,11 +207,25 @@ def marginal_calibration_curve_ngboost(y_true, dist, grid_y):
 
 
 def pit_diagnostics_ngboost(y_true, dist: NGBoostDistAdapter) -> PitFcstAtObs:
-    """Exact PIT diagnostics for an NGBoostDistAdapter, using the same
-    scores.probability.PitFcstAtObs machinery as ordboost.metrics.pit_diagnostics
+    """Compute exact PIT diagnostics for an NGBoostDistAdapter.
 
-    Values are rounded to 2 decimal places before construction, matching
-    the workaround found for the OrdBoost side: PitFcstAtObs's memory use.
+    This uses the same `scores.probability.PitFcstAtObs` machinery as
+    `ordboost.metrics.pit_diagnostics`. Values are rounded to 2 decimal
+    places before construction, matching the workaround used on the OrdBoost
+    side to limit the memory use of PitFcstAtObs.
+
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        True target values.
+    dist : NGBoostDistAdapter
+        Predicted distributions.
+
+    Returns
+    -------
+    PitFcstAtObs
+        PIT diagnostics object.
+
     """
     y_true_arr = np.asarray(y_true, dtype=float)
     fcst_at_obs = np.round(dist.cdf(y_true_arr), 2)
@@ -121,13 +236,15 @@ def pit_diagnostics_ngboost(y_true, dist: NGBoostDistAdapter) -> PitFcstAtObs:
 
 
 def cdf_grid_ngboost(dist: NGBoostDistAdapter, grid_y) -> np.ndarray:
-    """Evaluate an NGBoostDistAdapter's CDF at a shared set of grid_y
-    points for every sample, producing a (n_samples, n_grid_points) array
-    directly analogous to ContinuousPredictiveDistribution.grid_cdf.
+    """Evaluate an NGBoostDistAdapter's CDF on a shared grid.
+
+    The result is directly analogous to
+    `ContinuousPredictiveDistribution.grid_cdf`.
 
     Parameters
     ----------
     dist : NGBoostDistAdapter
+        Predicted distributions.
     grid_y : array-like
         Same grid used for the ordboost distribution, e.g.
         ordboost_dist.grid_y, so both models' CDFs can be compared or
@@ -136,6 +253,8 @@ def cdf_grid_ngboost(dist: NGBoostDistAdapter, grid_y) -> np.ndarray:
     Returns
     -------
     np.ndarray of shape (n_samples, len(grid_y))
+        CDF of every sample at every grid point.
+
     """
     grid_y = np.asarray(grid_y, dtype=float)
     n_samples = len(dist.mean())

@@ -44,8 +44,10 @@ def plot_binned_vs_continuous(
     ax=None,
     save_path=None,
 ):
-    """Plot the continuous target and its binned version on the same
-    DAOH-value x-axis, so the two distributions are directly comparable.
+    """Plot the continuous target and its binned version.
+
+    Both distributions share the DAOH-value x-axis, so they are directly
+    comparable.
 
     Parameters
     ----------
@@ -57,15 +59,25 @@ def plot_binned_vs_continuous(
         Edges used to create y_binned. Length must be n_bins + 1.
     colors : list[str]
         Colors to plot with.
-    n_fine_bins : int
-        Number of bins for the continuous histogram.
-    density : bool
+    n_fine_bins : int, default=90
+        Number of bins for the continuous histogram. Currently unused, the
+        histogram always uses 90 bins.
+    density : bool, default=False
         If True, plot binned bars as counts / bin_width, so bar *area*
-        (not just height) is comparable across your very uneven bin
-        widths. If False, plot raw counts.
-    log_scale : bool
+        (not just height) is comparable across very uneven bin widths. If
+        False, plot raw counts.
+    log_scale : bool, default=True
         Use a log y-axis.
     ax : matplotlib.axes.Axes, optional
+        Currently unused, a new figure is always created.
+    save_path : str or Path, optional
+        If given, the figure is saved there.
+
+    Returns
+    -------
+    matplotlib.axes.Axes or None
+        The `ax` argument, returned unchanged.
+
     """
     y_cont = np.asarray(y_cont, dtype=float)
     y_binned = np.asarray(y_binned, dtype=int)
@@ -128,7 +140,28 @@ def plot_binned_vs_continuous(
 
 
 def plot_sample_cdfs(model_results, colors, title, save_path=None):
-    """Figure 2: example CDFs for different DAOH values."""
+    """Plot example CDFs for different DAOH values.
+
+    Parameters
+    ----------
+    model_results : dict
+        Output of `compute_sample_cdfs`, with keys "grid_y" and "cdfs"
+        ({daoh: cdf_array}).
+    colors : list[str]
+        One colour per CDF.
+    title : str
+        Model name used in the plot title.
+    save_path : str or Path, optional
+        If given, the figure is saved there.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure.
+    ax : matplotlib.axes.Axes
+        The axes.
+
+    """
 
     fig, ax = plt.subplots(figsize=(7, 5), sharex=True)
     grid_y = model_results["grid_y"]
@@ -173,8 +206,31 @@ def plot_pit_histogram_grouped(
     save_path=None,
     ax=None,
 ):
-    """Randomized PIT histogram, one grouped bar per bin per region, on a
-    single shared axis. Sized for single-column placement.
+    """Plot randomized PIT histograms as grouped bars on a shared axis.
+
+    Each PIT bin holds one bar per model. Sized for single-column placement.
+
+    Parameters
+    ----------
+    model_hists : dict
+        Model name -> output of `pit_histogram` (keys "alpha" and
+        "hist_values").
+    colors : list[str]
+        Currently unused, colours come from `COLOURS`.
+    display_labels : dict[str, str], optional
+        Model name -> display name. Defaults to the model name.
+    n_bins : int, default=20
+        Number of PIT bins, must match the histograms.
+    save_path : str or Path, optional
+        If given, the figure is saved there.
+    ax : matplotlib.axes.Axes, optional
+        Axes to draw on. A new figure is created if None.
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        The axes.
+
     """
     display_labels = display_labels or {}
     models = list(model_hists.keys())
@@ -211,7 +267,7 @@ def plot_pit_histogram_grouped(
         label = (
             f"{display_labels.get(model, model)}"
             + r" $\alpha$ score: "
-            + f"{model_hists[model]["alpha"].values:.3f}"
+            + f"{model_hists[model]['alpha'].values:.3f}"
         )
         ax.bar(
             bar_starts,
@@ -252,7 +308,27 @@ def plot_pit_histogram_grouped(
 def plot_marginal_calibration(
     model_results, colors, display_labels, save_path=None, ax=None
 ):
-    """Figure 4: marginal calibration plot."""
+    """Plot the marginal calibration curves.
+
+    Parameters
+    ----------
+    model_results : dict
+        Model name -> (grid_y, diff), as returned by `marginal_calibration`.
+    colors : list[str]
+        Currently unused, colours come from `COLOURS`.
+    display_labels : dict[str, str]
+        Model name -> display name.
+    save_path : str or Path, optional
+        If given, the figure is saved there.
+    ax : matplotlib.axes.Axes, optional
+        Axes to draw on. A new figure is created if None.
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        The axes.
+
+    """
     if ax is None:
         _, ax = plt.subplots(figsize=(7, 5))
 
@@ -295,8 +371,28 @@ def plot_marginal_calibration(
 
 
 def plot_coverage(model_results, colors, display_labels=None, save_path=None):
-    """Figure 5: coverage reliability, sharpness, score across
-    nominal coverage levels, one line per region on each subplot.
+    """Plot the empirical coverage against the nominal coverage.
+
+    One line is drawn per model, along with the ideal diagonal.
+
+    Parameters
+    ----------
+    model_results : dict
+        Model name -> output of `coverage_sharpness_curve`.
+    colors : list[str]
+        Currently unused, colours come from `COLOURS`.
+    display_labels : dict[str, str], optional
+        Model name -> display name. Defaults to the model name.
+    save_path : str or Path, optional
+        If given, the figure is saved there.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure.
+    ax : matplotlib.axes.Axes
+        The axes.
+
     """
     display_labels = display_labels or {}
     style = {
@@ -345,8 +441,28 @@ def plot_coverage(model_results, colors, display_labels=None, save_path=None):
 
 
 def plot_sharpness(model_results, colors, display_labels=None, save_path=None):
-    """Figure 4: sharpness across nominal coverage levels, one line per
-    model.
+    """Plot the sharpness across nominal coverage levels.
+
+    One line is drawn per model.
+
+    Parameters
+    ----------
+    model_results : dict
+        Model name -> output of `coverage_sharpness_curve`.
+    colors : list[str]
+        Currently unused, colours come from `COLOURS`.
+    display_labels : dict[str, str], optional
+        Model name -> display name. Defaults to the model name.
+    save_path : str or Path, optional
+        If given, the figure is saved there.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure.
+    ax : matplotlib.axes.Axes
+        The axes.
+
     """
     display_labels = display_labels or {}
     style = {
@@ -391,8 +507,28 @@ def plot_sharpness(model_results, colors, display_labels=None, save_path=None):
 
 
 def plot_winkler(model_results, colors, display_labels=None, save_path=None):
-    """Figure 4: sharpness across nominal coverage levels, one line per
-    model.
+    """Plot the Winkler score across nominal coverage levels.
+
+    One line is drawn per model.
+
+    Parameters
+    ----------
+    model_results : dict
+        Model name -> output of `coverage_sharpness_curve`.
+    colors : list[str]
+        Currently unused, colours come from `COLOURS`.
+    display_labels : dict[str, str], optional
+        Model name -> display name. Defaults to the model name.
+    save_path : str or Path, optional
+        If given, the figure is saved there.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure.
+    ax : matplotlib.axes.Axes
+        The axes.
+
     """
     display_labels = display_labels or {}
     style = {

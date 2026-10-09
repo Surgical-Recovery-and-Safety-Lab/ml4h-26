@@ -34,12 +34,48 @@ from ordboost.metrics import (
 
 
 def wrap_ngboost_pred_dist(ngb_pred_dist) -> NGBoostDistAdapter:
-    """Wrap NGBRegressor.pred_dist(X)'s output in an NGBoostDistAdapter."""
+    """Wrap the output of `NGBRegressor.pred_dist(X)` in an adapter.
+
+    Parameters
+    ----------
+    ngb_pred_dist
+        NGBoost predicted distribution. Its `dist` attribute must be a scipy
+        frozen distribution.
+
+    Returns
+    -------
+    NGBoostDistAdapter
+        Adapter exposing the ordboost distribution interface.
+
+    """
     return NGBoostDistAdapter(ngb_pred_dist.dist)
 
 
 def compute_metrics(y_true, y_pred, dist, y_train):
-    """MAE, CRPS, CRPSS for predictions from one model."""
+    """Compute the MAE, MAESS, CRPS and CRPSS for one model.
+
+    The skill scores are computed relative to a baseline: the median of
+    `y_true` for the MAE, and the baseline distribution built from `y_train`
+    for the CRPS. If the model has no predictive distribution, the CRPS and
+    CRPSS fall back to the MAE and MAESS.
+
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        True target values.
+    y_pred : array-like of shape (n_samples,)
+        Point predictions.
+    dist : NGBoostDistAdapter or ContinuousPredictiveDistribution or None
+        Predictive distributions. If None, only point metrics are used.
+    y_train : array-like of shape (n_train_samples,)
+        Training targets used to build the baseline distribution.
+
+    Returns
+    -------
+    dict[str, float]
+        Dictionary with keys "mae", "maess", "crps" and "crpss".
+
+    """
     mae = mean_absolute_error(y_true, y_pred)
     medians = np.quantile(y_true, 0.5) * np.ones((len(y_true),))
     maess = 1 - (mae / mean_absolute_error(y_true, medians))
@@ -65,23 +101,24 @@ def compute_metrics(y_true, y_pred, dist, y_train):
 
 
 def compute_sample_cdfs(dist, indices, grid_y):
-    """Extracts the CDF at selected indices.
+    """Extract the CDF at selected indices.
 
     Parameters
     ----------
-    dist
+    dist : NGBoostDistAdapter or ContinuousPredictiveDistribution
         Distribution object.
-    indices
+    indices : dict[int, int]
         Dictionary with {index: daoh}.
-    grid_y
-        Grid points to evaluate CDF for NGBoost.
+    grid_y : array-like
+        Grid points to evaluate the CDF on for NGBoost. Ignored for ordboost
+        distributions, which use their own grid.
 
     Returns
     -------
     cdfs : dict[str, Any]
         Dictionary with:
         "grid_y": grid_y
-        "cdfs": {daoh, cdf_array}
+        "cdfs": {daoh: cdf_array}
 
     """
     cdfs = {"grid_y": grid_y, "cdfs": {}}
@@ -98,6 +135,16 @@ def compute_sample_cdfs(dist, indices, grid_y):
 
 
 def save_table(latex_str, path: str | Path = "table.txt"):
+    """Write a LaTeX table string to a text file.
+
+    Parameters
+    ----------
+    latex_str : str
+        LaTeX source of the table.
+    path : str or Path, default="table.txt"
+        Destination file. Overwritten if it exists.
+
+    """
     with open(path, "w") as f:
         f.write(latex_str + "\n")
 
@@ -108,7 +155,32 @@ def pit_histogram(
     mapper: BaseBinMapper | None = None,
     n_bins: int = 20,
 ) -> dict:
-    """Compute PIT histogram for a model."""
+    """Compute the PIT histogram and alpha score for a model.
+
+    Parameters
+    ----------
+    y_true : ArrayLike of shape (n_samples,)
+        True continuous target values.
+    dist : ContinuousPredictiveDistribution or NGBoostDistAdapter
+        Predicted distributions.
+    mapper : BaseBinMapper, optional
+        Bin mapper of the OrdBoost model. Required unless `dist` is an
+        NGBoostDistAdapter.
+    n_bins : int, default=20
+        Number of histogram bins.
+
+    Returns
+    -------
+    dict
+        Dictionary with keys "alpha" (the PIT alpha score) and "hist_values"
+        (the histogram values).
+
+    Raises
+    ------
+    ValueError
+        If `dist` is not an NGBoostDistAdapter and `mapper` is None.
+
+    """
     y_true_arr = np.asarray(y_true, dtype=float)
 
     if isinstance(dist, NGBoostDistAdapter):
@@ -127,9 +199,26 @@ def pit_histogram(
 
 
 def marginal_calibration(y_true, dist, grid_y, mapper):
-    """Marginal calibration for a model.
+    """Compute the marginal calibration curve for a model.
 
-    Returns dict[label -> (grid_y, diff)]
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        True target values.
+    dist : NGBoostDistAdapter or ContinuousPredictiveDistribution
+        Predicted distributions.
+    grid_y : array-like
+        Grid to evaluate the curve on. Only used for NGBoost.
+    mapper : BaseBinMapper
+        Bin mapper of the OrdBoost model. Only used for ordboost
+        distributions.
+
+    Returns
+    -------
+    tuple
+        The grid and the difference between the empirical CDF and the mean
+        predicted CDF at each grid point.
+
     """
     y_true_arr = np.asarray(y_true, dtype=float)
     if isinstance(dist, NGBoostDistAdapter):
@@ -140,15 +229,30 @@ def marginal_calibration(y_true, dist, grid_y, mapper):
 
 
 def coverage_sharpness_curve(y_true, dist, coverage_levels, tolerance=0.0):
-    """For each nominal central-interval coverage level (in percent, e.g.
-    90 for a 90% interval), compute empirical coverage, sharpness (mean
-    interval width).
+    """Compute coverage, sharpness and Winkler score across coverage levels.
 
-    alpha convention (matches ordboost.metrics): alpha = 1 - coverage/100,
-    e.g. coverage=90 -> alpha=0.10.
+    The alpha convention matches ordboost.metrics: alpha = 1 - coverage / 100,
+    e.g. coverage=90 gives alpha=0.10.
 
-    Returns dict with keys "coverage_levels", "empirical_coverage",
-    "sharpness".
+    Parameters
+    ----------
+    y_true : array-like of shape (n_samples,)
+        True target values.
+    dist : NGBoostDistAdapter or ContinuousPredictiveDistribution
+        Predicted distributions.
+    coverage_levels : array-like
+        Nominal central-interval coverage levels in percent (e.g. 90 for a
+        90% interval).
+    tolerance : float, default=0.0
+        Currently unused.
+
+    Returns
+    -------
+    dict[str, np.ndarray]
+        Dictionary with keys "coverage_levels", "empirical_coverage",
+        "winkler" and "sharpness" (mean interval width), each with one value
+        per coverage level.
+
     """
     y_true_arr = np.asarray(y_true, dtype=float)
     coverage_levels = np.asarray(coverage_levels, dtype=float)
@@ -216,22 +320,25 @@ def interval_coverage(
 
 
 def estimate_patients(dist, ind: dict[int, int], alpha: float) -> dict[int, tuple]:
-    """Estimates the patient's DAOH and interval using the median() function.
+    """Estimate the DAOH and prediction interval of selected patients.
+
+    The point prediction is the rounded median of the distribution.
 
     Parameters
     ----------
-    dist
+    dist : NGBoostDistAdapter or ContinuousPredictiveDistribution
         Predictive distribution.
     ind : dict[int, int]
         Dictionary of indices to check with associated true DAOH.
     alpha : float
-        Prediction interval.
+        Tail significance level of the prediction interval (e.g. 0.05 for a
+        95% interval).
 
     Returns
     -------
     dict[int, tuple]
-        Dictionary containing the index as key and the prediction with
-        intervals as a tuple.
+        Dictionary with the index as key and a tuple (true DAOH, prediction,
+        lower bound, upper bound) as value.
 
     """
     predictions = dist.median()
@@ -250,7 +357,19 @@ def estimate_patients(dist, ind: dict[int, int], alpha: float) -> dict[int, tupl
 
 
 def _format_continuous(series):
-    """Median (IQR) as 'median (Q1--Q3)', ignoring NaNs."""
+    """Format a series as 'median (Q1--Q3)', ignoring NaNs.
+
+    Parameters
+    ----------
+    series : pd.Series
+        Continuous values to summarise.
+
+    Returns
+    -------
+    str
+        The formatted summary, or "--" if there are no valid values.
+
+    """
     valid = series.dropna()
     if len(valid) == 0:
         return "--"
@@ -260,14 +379,45 @@ def _format_continuous(series):
 
 
 def _format_n_pct(n, total):
-    """'n (pct%)', percentage of the dataset's full N (missing included)."""
+    """Format a count as 'n (pct%)' with a LaTeX-escaped percent sign.
+
+    Parameters
+    ----------
+    n : int
+        Count of interest.
+    total : int
+        Full size of the dataset (missing values included).
+
+    Returns
+    -------
+    str
+        The formatted count and percentage. The percentage is 0 if `total`
+        is not positive.
+
+    """
     pct = 100 * n / total if total > 0 else 0.0
     return f"{n:,} ({pct:.1f}\\%)"
 
 
 def _categorical_rows(datasets, col, categories=None):
-    """One (label, [cells]) row per category across datasets, plus a
-    trailing Missing row if any dataset has NaNs for this column.
+    """Build the table rows for a categorical column across datasets.
+
+    Parameters
+    ----------
+    datasets : list[pd.DataFrame]
+        Datasets to summarise.
+    col : str
+        Categorical column name.
+    categories : list, optional
+        Category order. Defaults to the sorted union of the categories found
+        in the datasets.
+
+    Returns
+    -------
+    list[tuple[str, list[str]]]
+        One (label, cells) row per category, plus a trailing "Missing" row
+        if any dataset has NaNs in this column.
+
     """
     if categories is None:
         categories = sorted(
@@ -298,16 +448,20 @@ def generate_patient_characteristics_table(
     caption="Patient characteristics by dataset.",
     label="tab:patient_chars",
 ):
-    """Build a LaTeX longtable/booktabs patient characteristics table
-    across the train/recalibration/test splits.
+    """Build a LaTeX longtable/booktabs patient characteristics table.
+
+    The table compares the train and test splits.
 
     Parameters
     ----------
-    X_train, X_test : pd.DataFrame
-        Feature dataframes with ORIGINAL (pre-OrdinalEncoder) categorical
+    X_train : pd.DataFrame
+        Training features with the original (pre-OrdinalEncoder) categorical
         values, so category labels render as text rather than integer codes.
+    X_test : pd.DataFrame
+        Test features, with the same format as `X_train`.
     continuous_features : list[str]
-        Columns summarised as median (IQR).
+        Columns summarised as median (IQR). Only the first one is used, and
+        it is reported as the age.
     categorical_features : list[str]
         Columns summarised as one row per category, N (%).
     feature_labels : dict[str, str], optional
@@ -316,7 +470,10 @@ def generate_patient_characteristics_table(
         Column name -> explicit category order, e.g. {"trauma": ["No","Yes"]},
         so binary features don't sort alphabetically as ["No","Yes"] vs
         ["Yes","No"] depending on the data.
-    caption, label : str
+    caption : str, default="Patient characteristics by dataset."
+        Table caption.
+    label : str, default="tab:patient_chars"
+        LaTeX label of the table.
 
     Returns
     -------

@@ -216,7 +216,7 @@ def generate_experiment_results(
 
     Parameters
     ----------
-    experiment : str, {"binning", "mappers"}
+    experiment : str, {"n_bins", "bin_dist", "mappers"}
         Experiment to generate results for.
 
     Raises
@@ -354,10 +354,20 @@ def generate_experiment_results(
 
 
 def generate_result_table(results, order, display_labels, save_path):
-    """results: dict[key -> {"mae","crps","crpss"}]
-    order: list of keys controlling row order
-    display_labels: dict[key -> LaTeX-escaped display string]
-    save_path: str
+    """Generate the LaTeX metrics table and save it.
+
+    Parameters
+    ----------
+    results : dict[str, dict[str, float]]
+        Model key -> metrics from `compute_metrics` (keys "mae", "maess",
+        "crps" and "crpss").
+    order : list[str]
+        Model keys controlling the column order.
+    display_labels : dict[str, str]
+        Model key -> LaTeX-escaped display string.
+    save_path : str or Path
+        File to save the table in.
+
     """
     lines = [
         r"\begin{tabular}{ccc}",
@@ -387,10 +397,24 @@ def generate_result_table(results, order, display_labels, save_path):
 
 
 def generate_prediction_table(results, interval, order, display_labels, save_path):
-    """results: dict[key -> (DAOH, pred, l_bound, u_bound]
-    order: list of keys controlling row order
-    display_labels: dict[key -> LaTeX-escaped display string]
-    save_path: str
+    """Generate the LaTeX table of example patient predictions and save it.
+
+    Models without prediction intervals (lower bound of None) are shown as
+    point estimates.
+
+    Parameters
+    ----------
+    results : dict[str, dict[int, tuple]]
+        Model key -> {patient index: (DAOH, pred, l_bound, u_bound)}.
+    interval : float
+        Nominal coverage of the prediction intervals, in percent.
+    order : list[str]
+        Model keys controlling the column order.
+    display_labels : dict[str, str]
+        Model key -> LaTeX-escaped display string.
+    save_path : str or Path
+        File to save the table in.
+
     """
     lines = [
         r"\begin{tabular}{lll}",
@@ -495,6 +519,8 @@ def generate_data_distribution(
 ) -> None:
     """Generate the data distribution before and after binning.
 
+    Parameters
+    ----------
     y_test : np.ndarray of shape (n_samples,)
         Test data to plot.
     pipe : MedpipeRegressor
