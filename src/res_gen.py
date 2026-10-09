@@ -343,13 +343,13 @@ def generate_experiment_results(
 
 
 def generate_result_table(results, order, display_labels, save_path):
-    """Generate the LaTeX metrics table and save it.
+    """Generate the LaTeX metrics table with 95% CIs and save it.
 
     Parameters
     ----------
-    results : dict[str, dict[str, float]]
+    results : dict[str, dict[str, tuple[float, float, float]]]
         Model key -> metrics from `compute_metrics` (keys "mae", "maess",
-        "crps" and "crpss").
+        "crps" and "crpss"), each as (estimate, lower, upper).
     order : list[str]
         Model keys controlling the column order.
     display_labels : dict[str, str]
@@ -359,7 +359,7 @@ def generate_result_table(results, order, display_labels, save_path):
 
     """
     lines = [
-        r"\begin{tabular}{ccc}",
+        r"\begin{tabular}{" + "c" * (len(order) + 1) + "}",
         r"\toprule",
         r"\textbf{Metrics} & "
         + " & ".join(rf"\textbf{{{display_labels[key]}}}" for key in order)
@@ -375,7 +375,12 @@ def generate_result_table(results, order, display_labels, save_path):
     ]
 
     for row_label, metric_key, fmt in metric_rows:
-        cells = [fmt.format(results[key][metric_key]) for key in order]
+        cells = []
+        for key in order:
+            value, lower, upper = results[key][metric_key]
+            cells.append(
+                f"{fmt.format(value)} [{fmt.format(lower)}, {fmt.format(upper)}]"
+            )
         lines.append(f"{row_label} & " + " & ".join(cells) + r" \\")
 
     lines.append(r"\bottomrule")
