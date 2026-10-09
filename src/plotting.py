@@ -200,7 +200,6 @@ def plot_sample_cdfs(model_results, colors, title, save_path=None):
 
 def plot_pit_histogram_grouped(
     model_hists,
-    colors,
     display_labels=None,
     n_bins=20,
     save_path=None,
@@ -215,8 +214,6 @@ def plot_pit_histogram_grouped(
     model_hists : dict
         Model name -> output of `pit_histogram` (keys "alpha" and
         "hist_values").
-    colors : list[str]
-        Currently unused, colours come from `COLOURS`.
     display_labels : dict[str, str], optional
         Model name -> display name. Defaults to the model name.
     n_bins : int, default=20
@@ -306,7 +303,7 @@ def plot_pit_histogram_grouped(
 
 
 def plot_marginal_calibration(
-    model_results, colors, display_labels, save_path=None, ax=None
+    model_results, display_labels, save_path=None, ax=None
 ):
     """Plot the marginal calibration curves.
 
@@ -314,8 +311,6 @@ def plot_marginal_calibration(
     ----------
     model_results : dict
         Model name -> (grid_y, diff), as returned by `marginal_calibration`.
-    colors : list[str]
-        Currently unused, colours come from `COLOURS`.
     display_labels : dict[str, str]
         Model name -> display name.
     save_path : str or Path, optional
@@ -370,7 +365,7 @@ def plot_marginal_calibration(
     return ax
 
 
-def plot_coverage(model_results, colors, display_labels=None, save_path=None):
+def plot_coverage(model_results, display_labels=None, save_path=None):
     """Plot the empirical coverage against the nominal coverage.
 
     One line is drawn per model, along with the ideal diagonal.
@@ -379,8 +374,6 @@ def plot_coverage(model_results, colors, display_labels=None, save_path=None):
     ----------
     model_results : dict
         Model name -> output of `coverage_sharpness_curve`.
-    colors : list[str]
-        Currently unused, colours come from `COLOURS`.
     display_labels : dict[str, str], optional
         Model name -> display name. Defaults to the model name.
     save_path : str or Path, optional
@@ -440,7 +433,7 @@ def plot_coverage(model_results, colors, display_labels=None, save_path=None):
     return fig, ax
 
 
-def plot_sharpness(model_results, colors, display_labels=None, save_path=None):
+def plot_sharpness(model_results, display_labels=None, save_path=None):
     """Plot the sharpness across nominal coverage levels.
 
     One line is drawn per model.
@@ -449,8 +442,6 @@ def plot_sharpness(model_results, colors, display_labels=None, save_path=None):
     ----------
     model_results : dict
         Model name -> output of `coverage_sharpness_curve`.
-    colors : list[str]
-        Currently unused, colours come from `COLOURS`.
     display_labels : dict[str, str], optional
         Model name -> display name. Defaults to the model name.
     save_path : str or Path, optional
@@ -506,7 +497,7 @@ def plot_sharpness(model_results, colors, display_labels=None, save_path=None):
     return fig, ax
 
 
-def plot_winkler(model_results, colors, display_labels=None, save_path=None):
+def plot_winkler(model_results, display_labels=None, save_path=None):
     """Plot the Winkler score across nominal coverage levels.
 
     One line is drawn per model.
@@ -515,8 +506,6 @@ def plot_winkler(model_results, colors, display_labels=None, save_path=None):
     ----------
     model_results : dict
         Model name -> output of `coverage_sharpness_curve`.
-    colors : list[str]
-        Currently unused, colours come from `COLOURS`.
     display_labels : dict[str, str], optional
         Model name -> display name. Defaults to the model name.
     save_path : str or Path, optional
