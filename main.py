@@ -8,12 +8,12 @@ from mord import OrdinalRidge
 from src.res_gen import generate_experiment_results, generate_results
 
 
-def run_model(model: Literal["ordboost", "ngboost", "regressor"]) -> None:
+def run_model(model: Literal["ordboost", "ngboost", "HGBr", "mord"]) -> None:
     """Fit one of the available models.
 
     Parameters
     ----------
-    model : str, {"ordboost", "ngboost", "regressor"}
+    model : str, {"ordboost", "ngboost", "HGBr", "mord"}
         Name of the model to run.
 
     """
@@ -82,7 +82,14 @@ if __name__ == "__main__":
     )
 
     run_parser.add_argument(
-        "model", help="model to select", choices=["ordboost", "ngboost", "regressor"]
+        "model",
+        help="model to select",
+        choices=[
+            "ordboost",
+            "ngboost",
+            "HGBr",
+            "mord",
+        ],
     )
 
     # Main results generation parser
