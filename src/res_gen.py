@@ -85,11 +85,14 @@ def generate_results(
         outcome="DAOH_90",
     )
 
-    models = {
-        "ngboost": ngboost_dist,
-        "ordboost": ordboost_dist,
+    models = {"ngboost": ngboost_dist, "ordboost": ordboost_dist}
+    table_models = models | {"hgbr": None, "mord": None}
+    display_labels = {
+        "ngboost": "NGBoost",
+        "ordboost": "OrdBoost",
+        "hgbr": "HGBRegressor",
+        "mord": "OrdinalRidge",
     }
-    display_labels = {"ngboost": "NGBoost", "ordboost": "OrdBoost"}
     mapper = ordboost_pipe.models["DAOH_90"]["regressor"].mapper_
 
     # Generate data tables
@@ -102,14 +105,17 @@ def generate_results(
     )
 
     results = {}
-    order = ["ngboost", "ordboost"]
-    for model, dist in models.items():
-        results[model] = compute_metrics(
-            y_test,
-            np.round(dist.median()),
-            dist,
-            y_train,
-        )
+    order = ["hgbr", "mord", "ngboost", "ordboost"]
+    for model, dist in table_models.items():
+        y_true = y_test
+        if model == "mord":
+            y_true = mord_pipe.data_split.y_test["DAOH_90"].to_numpy()
+
+        if model == "ngboost" or model == "ordboost":
+            y_pred = np.round(dist.median())
+        else:
+            y_pred = y_preds[model]
+        results[model] = compute_metrics(y_true, y_pred, dist, y_train)
 
     generate_result_table(
         results,
@@ -140,8 +146,14 @@ def generate_results(
 
     results = {}
     alpha = 0.05
-    for model, dist in models.items():
-        results[model] = estimate_patients(dist, indices, alpha)
+    for model, dist in table_models.items():
+        if dist is not None:
+            results[model] = estimate_patients(dist, indices, alpha)
+            continue
+        res = {}
+        for ind, daoh in indices.items():
+            res[ind] = (daoh, y_preds[model][ind], None, None)
+        results[model] = res
 
     generate_prediction_table(
         results,
