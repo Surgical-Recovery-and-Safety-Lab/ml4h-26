@@ -19,14 +19,17 @@ plt.rcParams.update(
 THEME = MedpipeTheme()
 COLOURS = {
     "ngboost": THEME.palette[0],
-    "3-bins": THEME.palette[0],
-    "mean": THEME.palette[0],
     "ordboost": THEME.palette[1],
+    "4-bins": THEME.palette[0],
+    "8-bins": THEME.palette[1],
+    "12-bins": THEME.palette[2],
+    "16-bins": THEME.palette[3],
+    "20-bins": THEME.palette[4],
+    "mean": THEME.palette[0],
+    "quantile": THEME.palette[3],
     "median": THEME.palette[2],
-    "5-bins": THEME.palette[2],
-    "uniform": THEME.palette[3],
-    "quantile": THEME.palette[4],
-    "continuous": THEME.palette[4],
+    "uniform": THEME.palette[4],
+    "continuous": THEME.palette[1],
 }
 
 
@@ -185,8 +188,11 @@ def plot_pit_histogram_grouped(
         "continuous": COLOURS["continuous"],
         "median": COLOURS["median"],
         "mean": COLOURS["mean"],
-        "3-bins": COLOURS["3-bins"],
-        "5-bins": COLOURS["5-bins"],
+        "4-bins": COLOURS["4-bins"],
+        "8-bins": COLOURS["8-bins"],
+        "12-bins": COLOURS["12-bins"],
+        "16-bins": COLOURS["16-bins"],
+        "20-bins": COLOURS["20-bins"],
     }
 
     if ax is None:
@@ -258,8 +264,11 @@ def plot_marginal_calibration(
         "continuous": dict(color=COLOURS["continuous"]),
         "median": dict(color=COLOURS["median"]),
         "mean": dict(color=COLOURS["mean"]),
-        "3-bins": dict(color=COLOURS["3-bins"]),
-        "5-bins": dict(color=COLOURS["5-bins"]),
+        "4-bins": dict(color=COLOURS["4-bins"]),
+        "8-bins": dict(color=COLOURS["8-bins"]),
+        "12-bins": dict(color=COLOURS["12-bins"]),
+        "16-bins": dict(color=COLOURS["16-bins"]),
+        "20-bins": dict(color=COLOURS["20-bins"]),
     }
 
     for label, results in model_results.items():
@@ -298,8 +307,11 @@ def plot_coverage(model_results, colors, display_labels=None, save_path=None):
         "continuous": dict(color=COLOURS["continuous"], marker="s"),
         "mean": dict(color=COLOURS["mean"], marker="s"),
         "median": dict(color=COLOURS["median"], marker="s"),
-        "3-bins": dict(color=COLOURS["3-bins"], marker="s"),
-        "5-bins": dict(color=COLOURS["5-bins"], marker="s"),
+        "4-bins": dict(color=COLOURS["4-bins"], marker="s"),
+        "8-bins": dict(color=COLOURS["8-bins"], marker="s"),
+        "12-bins": dict(color=COLOURS["12-bins"], marker="s"),
+        "16-bins": dict(color=COLOURS["16-bins"], marker="s"),
+        "20-bins": dict(color=COLOURS["20-bins"], marker="s"),
     }
 
     fig, ax = plt.subplots(figsize=(7, 5), sharex=True)
@@ -345,8 +357,11 @@ def plot_sharpness(model_results, colors, display_labels=None, save_path=None):
         "continuous": dict(color=COLOURS["continuous"], marker="s"),
         "mean": dict(color=COLOURS["mean"], marker="s"),
         "median": dict(color=COLOURS["median"], marker="s"),
-        "3-bins": dict(color=COLOURS["3-bins"], marker="s"),
-        "5-bins": dict(color=COLOURS["5-bins"], marker="s"),
+        "4-bins": dict(color=COLOURS["4-bins"], marker="s"),
+        "8-bins": dict(color=COLOURS["8-bins"], marker="s"),
+        "12-bins": dict(color=COLOURS["12-bins"], marker="s"),
+        "16-bins": dict(color=COLOURS["16-bins"], marker="s"),
+        "20-bins": dict(color=COLOURS["20-bins"], marker="s"),
     }
 
     fig, ax = plt.subplots(figsize=(7, 5))
@@ -388,8 +403,11 @@ def plot_winkler(model_results, colors, display_labels=None, save_path=None):
         "continuous": dict(color=COLOURS["continuous"], marker="s"),
         "mean": dict(color=COLOURS["mean"], marker="s"),
         "median": dict(color=COLOURS["median"], marker="s"),
-        "3-bins": dict(color=COLOURS["3-bins"], marker="s"),
-        "5-bins": dict(color=COLOURS["5-bins"], marker="s"),
+        "4-bins": dict(color=COLOURS["4-bins"], marker="s"),
+        "8-bins": dict(color=COLOURS["8-bins"], marker="s"),
+        "12-bins": dict(color=COLOURS["12-bins"], marker="s"),
+        "16-bins": dict(color=COLOURS["16-bins"], marker="s"),
+        "20-bins": dict(color=COLOURS["20-bins"], marker="s"),
     }
 
     fig, ax = plt.subplots(figsize=(7, 5))
