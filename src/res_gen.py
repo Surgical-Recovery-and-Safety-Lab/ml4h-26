@@ -29,7 +29,8 @@ from src.plotting import (
 )
 
 THEME = themes.MedpipeTheme()
-BINNING_EXP_ORDER = ["3-bins", "5-bins", "uniform", "quantile", "ordboost"]
+N_BINS_EXP_ORDER = ["4-bins", "8-bins", "12-bins", "16-bins", "20-bins"]
+BIN_DIST_EXP_ORDER = ["uniform", "quantile", "ordboost"]
 MAPPERS_EXP_ORDER = ["mean", "median", "uniform", "continuous", "ordboost"]
 
 
@@ -183,7 +184,9 @@ def generate_results(
     )
 
 
-def generate_experiment_results(experiment: Literal["binning", "mappers"]) -> None:
+def generate_experiment_results(
+    experiment: Literal["n_bins", "bin_dist", "mappers"],
+) -> None:
     """Experiment result generating function.
 
     The results are saved in the experiments/{experiment} plots and
@@ -204,18 +207,23 @@ def generate_experiment_results(experiment: Literal["binning", "mappers"]) -> No
     src_dir = Path(f"experiments/{experiment}")
     artifacts_dir = src_dir / "artifacts"
 
+    n_artifacts = 3 if experiment == "bin_dist" else 5
+
     if not artifacts_dir.is_dir():
         msg = f"Missing directory: {artifacts_dir}"
         raise FileNotFoundError(msg)
 
-    expected = {f"v{i}" for i in range(1, 6)}
+    expected = {f"v{i}" for i in range(1, n_artifacts + 1)}
     found = {p.name for p in artifacts_dir.iterdir() if p.is_dir()}
     if missing := expected - found:
         msg = f"{artifacts_dir} is missing subfolders: {sorted(missing)}. "
         "Run the experiment command with the --run flag first."
         raise FileNotFoundError(msg)
 
-    pipes = [MedpipeRegressor.load(artifacts_dir / f"v{i}") for i in range(1, 6)]
+    pipes = [
+        MedpipeRegressor.load(artifacts_dir / f"v{i}")
+        for i in range(1, n_artifacts + 1)
+    ]
 
     # Extract the data
     pipes[0]._orchestrator.prepare_data()
@@ -233,8 +241,11 @@ def generate_experiment_results(experiment: Literal["binning", "mappers"]) -> No
         mappers[name] = pipe.models["DAOH_90"]["regressor"].mapper_
 
     display_labels = {
-        "3-bins": "3-bins",
-        "5-bins": "5-bins",
+        "4-bins": "4-bins",
+        "8-bins": "8-bins",
+        "12-bins": "12-bins",
+        "16-bins": "16-bins",
+        "20-bins": "20-bins",
         "quantile": "Quantile",
         "uniform": "Uniform",
         "ordboost": "OrdBoost",
@@ -244,8 +255,10 @@ def generate_experiment_results(experiment: Literal["binning", "mappers"]) -> No
     }
 
     results = {}
-    if experiment == "binning":
-        order = BINNING_EXP_ORDER
+    if experiment == "n_bins":
+        order = N_BINS_EXP_ORDER
+    elif experiment == "bin_dist":
+        order = BIN_DIST_EXP_ORDER
     else:
         order = MAPPERS_EXP_ORDER
 
