@@ -107,7 +107,21 @@ if __name__ == "__main__":
     gen_parser.add_argument(
         "ngboost_version",
         metavar="ngboost-version",
-        help="version for the ordboost model (e.g. v1)",
+        help="version for the ngboost model (e.g. v1)",
+        nargs="?",
+        default="v1",
+    )
+    gen_parser.add_argument(
+        "hgbr_version",
+        metavar="HGBr-version",
+        help="version for the HGBr model (e.g. v1)",
+        nargs="?",
+        default="v1",
+    )
+    gen_parser.add_argument(
+        "mord_version",
+        metavar="mord-version",
+        help="version for the mord model (e.g. v1)",
         nargs="?",
         default="v1",
     )
@@ -144,7 +158,12 @@ if __name__ == "__main__":
         run_model(model=args.model)
     elif args.command == "results":
         # The results command was called
-        generate_results(args.ordboost_version, args.ngboost_version)
+        generate_results(
+            args.ordboost_version,
+            args.ngboost_version,
+            args.hgbr_version,
+            args.mord_version,
+        )
 
     else:
         # The experiment command was called
