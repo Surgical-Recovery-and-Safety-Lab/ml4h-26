@@ -11,7 +11,6 @@ from ordboost.distributions import ContinuousPredictiveDistribution
 from ordboost.mappers import BaseBinMapper
 from ordboost.metrics import (
     baseline_distribution,
-    marginal_calibration_curve,
     pit_diagnostics,
     sharpness,
     winkler_score,
@@ -28,7 +27,6 @@ from src.helpers_ngboost import (
     NGBoostDistAdapter,
     cdf_grid_ngboost,
     crps_ngboost_samples,
-    marginal_calibration_curve_ngboost,
     pit_diagnostics_ngboost,
 )
 
@@ -250,8 +248,20 @@ def pit_histogram(
     return {"alpha": alpha, "hist_values": hist_values}
 
 
-def marginal_calibration(y_true, dist, grid_y, mapper):
-    """Compute the marginal calibration curve for a model.
+def marginal_calibration(
+    y_true,
+    dist,
+    grid_y,
+    mapper,
+    n_boot: int = N_BOOT,
+    seed: int = BOOTSTRAP_SEED,
+):
+    """Compute the marginal calibration curve for a model, with a 95% CI.
+
+    The curve is the difference between the empirical CDF and the mean
+    predicted CDF at each grid point. The per-sample contributions are
+    computed once, and the confidence band is the pointwise percentile
+    interval over bootstrap resamples of the test samples.
 
     Parameters
     ----------
@@ -263,21 +273,50 @@ def marginal_calibration(y_true, dist, grid_y, mapper):
         Grid to evaluate the curve on. Only used for NGBoost.
     mapper : BaseBinMapper
         Bin mapper of the OrdBoost model. Only used for ordboost
-        distributions.
+        distributions, to handle the floor and ceiling atoms.
+    n_boot : int, default=1000
+        Number of bootstrap iterations.
+    seed : int, default=42
+        Seed of the bootstrap random generator. The same seed gives the same
+        resamples for every model.
 
     Returns
     -------
-    tuple
-        The grid and the difference between the empirical CDF and the mean
-        predicted CDF at each grid point.
+    grid_y : np.ndarray of shape (n_points,)
+        Grid points at which the curve is evaluated.
+    calibration : np.ndarray of shape (n_points,)
+        Empirical CDF minus mean predicted CDF.
+    lower : np.ndarray of shape (n_points,)
+        Lower bound of the 95% CI.
+    upper : np.ndarray of shape (n_points,)
+        Upper bound of the 95% CI.
 
     """
     y_true_arr = np.asarray(y_true, dtype=float)
+
     if isinstance(dist, NGBoostDistAdapter):
-        results = marginal_calibration_curve_ngboost(y_true_arr, dist, grid_y)
+        grid = np.asarray(grid_y, dtype=float)
+        cdf = cdf_grid_ngboost(dist, grid)
+        indicator = (y_true_arr[:, None] <= grid[None, :]).astype(float)
     else:
-        results = marginal_calibration_curve(y_true_arr, dist, mapper)
-    return results
+        grid = np.asarray(dist.grid_y, dtype=float)
+        cdf = np.array(dist.grid_cdf, dtype=float)
+        indicator = (y_true_arr[:, None] < grid[None, :]).astype(float)
+        if getattr(mapper, "floor_atom", False):
+            cdf[:, 1] = 0.0  # left-hand limit at the floor atom
+        if getattr(mapper, "ceiling_atom", False):
+            indicator[:, -1] = 1.0  # by convention
+
+    contribution = indicator - cdf  # Per-sample eCDF - CDF
+    n_samples = len(y_true_arr)
+
+    def statistic(idx):
+        counts = np.bincount(idx, minlength=n_samples)
+        return counts @ contribution / n_samples
+
+    draws = bootstrap_statistic(statistic, n_samples, n_boot, seed)
+    lower, upper = percentile_interval(draws)
+    return grid, contribution.mean(axis=0), lower, upper
 
 
 def coverage_sharpness_curve(y_true, dist, coverage_levels):

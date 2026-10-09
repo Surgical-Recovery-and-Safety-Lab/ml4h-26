@@ -1,6 +1,5 @@
 """Plot functions for conference paper figures."""
 
-
 import matplotlib.pyplot as plt
 import numpy as np
 from medpipe.visualisation.themes import MedpipeTheme
@@ -299,15 +298,15 @@ def plot_pit_histogram_grouped(
     return ax
 
 
-def plot_marginal_calibration(
-    model_results, display_labels, save_path=None, ax=None
-):
+def plot_marginal_calibration(model_results, display_labels, save_path=None, ax=None):
     """Plot the marginal calibration curves.
 
     Parameters
     ----------
     model_results : dict
-        Model name -> (grid_y, diff), as returned by `marginal_calibration`.
+        Model name -> (grid_y, diff, lower, upper), as returned by
+        `marginal_calibration`. The lower and upper bounds of the 95% CI are
+        drawn as a shaded area if present.
     display_labels : dict[str, str]
         Model name -> display name.
     save_path : str or Path, optional
@@ -340,13 +339,22 @@ def plot_marginal_calibration(
     }
 
     for label, results in model_results.items():
-        ax.plot(
+        (line,) = ax.plot(
             results[0],
             results[1],
             linewidth=2,
             label=display_labels.get(label, label),
             **style.get(label, {}),
         )
+        if len(results) >= 4:
+            ax.fill_between(
+                results[0],
+                results[2],
+                results[3],
+                color=line.get_color(),
+                alpha=0.2,
+                linewidth=0,
+            )
     ax.axhline(0.0, color="gray", linestyle="--", linewidth=1.5)
     ax.set_xlabel(r"$\mathbf{DAOH_{90}}$ (days)", fontweight="bold")
     ax.set_ylabel(r"eCDF - $\mathbf{\overline{CDF}}$", fontweight="bold")
