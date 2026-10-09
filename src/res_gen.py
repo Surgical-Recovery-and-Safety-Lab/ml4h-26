@@ -37,6 +37,8 @@ MAPPERS_EXP_ORDER = ["mean", "median", "uniform", "continuous", "ordboost"]
 def generate_results(
     ordboost_version: str,
     ngboost_version: str,
+    hgbr_version: str,
+    mord_version: str,
 ) -> None:
     """Main result generating function saved in the ordboost artifact directory.
 
@@ -46,10 +48,16 @@ def generate_results(
         Version of the ordboost model to load.
     ngboost_version : str
         Version of the ngboost model to load.
+    hgbr_version : str
+        Version of the HGBr model to load.
+    mord_version : str
+        Version of the mord model to load.
 
     """
     ordboost_pipe = MedpipeRegressor.load(f"artifacts/ordboost/{ordboost_version}")
     ngboost_pipe = MedpipeRegressor.load(f"artifacts/ngboost/{ngboost_version}")
+    hgbr_pipe = MedpipeRegressor.load(f"artifacts/HGBr/{hgbr_version}")
+    mord_pipe = MedpipeRegressor.load(f"artifacts/mord/{mord_version}")
 
     ordboost_pipe._orchestrator.prepare_data()
 
